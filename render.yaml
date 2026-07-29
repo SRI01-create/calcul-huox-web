@@ -1,0 +1,38 @@
+# render.yaml — Configuration de déploiement Render.com pour le backend FastAPI.
+# Placer à la racine du dépôt Git.
+#
+# Documentation : https://render.com/docs/yaml-spec
+
+services:
+  - type: web
+    name: calcul-huox-api
+    runtime: python
+    rootDir: backend
+
+    # ── Build ──────────────────────────────────────────────────────────────────
+    buildCommand: pip install -r requirements.txt
+
+    # ── Démarrage ─────────────────────────────────────────────────────────────
+    # $PORT est injecté automatiquement par Render.
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+
+    # ── Variables d'environnement ──────────────────────────────────────────────
+    envVars:
+      # Version Python — Render lit aussi backend/.python-version
+      - key: PYTHON_VERSION
+        value: "3.11.0"
+
+      # Origines CORS autorisées.
+      # Remplacer par l'URL réelle Netlify après le premier déploiement
+      # (ou ajouter une virgule + domaine custom : "https://calcul-huox.netlify.app,https://mondomaine.com")
+      - key: CORS_ORIGINS
+        value: https://calcul-huox.netlify.app
+
+    # ── Santé ─────────────────────────────────────────────────────────────────
+    # Render appelle ce chemin pour vérifier que le service est prêt.
+    healthCheckPath: /health
+
+    # ── Plan ──────────────────────────────────────────────────────────────────
+    # "free" : service en pause après 15 min d'inactivité (cold start ~30 s).
+    # Passer à "starter" pour un service toujours actif.
+    plan: free

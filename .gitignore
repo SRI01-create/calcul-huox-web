@@ -1,0 +1,27 @@
+# ── Python ──────────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.env
+
+# ── Node / Frontend ──────────────────────────────────────────────────────────
+node_modules/
+dist/
+.env.local
+.env.*.local
+
+# ── Catalogues de sections ────────────────────────────────────────────────────
+# Les CSV sont versionnés : Render en a besoin au déploiement.
+# Pour les régénérer depuis l'xlsm source : python backend/scripts/extract_catalogues.py
+
+# ── Fichier source xlsm (confidentiel, ne pas versionner) ───────────────────
+*.xlsm
+
+# ── IDE & OS ────────────────────────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+.DS_Store
+Thumbs.db

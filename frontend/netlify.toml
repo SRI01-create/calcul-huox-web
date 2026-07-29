@@ -1,0 +1,21 @@
+# netlify.toml — Configuration de déploiement Netlify pour le frontend React/Vite.
+#
+# Ce fichier est dans frontend/.
+# Dans le dashboard Netlify, configurer : Base directory = "frontend"
+#
+# Documentation : https://docs.netlify.com/configure-builds/file-based-configuration/
+
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "20"
+
+# ── SPA routing ──────────────────────────────────────────────────────────────
+# Redirige toutes les URLs non-statiques vers index.html
+# (nécessaire pour que React Router fonctionne en production)
+[[redirects]]
+  from   = "/*"
+  to     = "/index.html"
+  status = 200

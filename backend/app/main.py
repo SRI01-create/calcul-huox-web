@@ -1,0 +1,269 @@
+"""
+Calcul HUOX — API FastAPI
+Point d'entrée de l'application backend.
+
+Phase 18 : endpoints /api/calculate et /api/sections.
+
+Endpoints
+─────────
+    GET  /health                          → vérification de disponibilité
+    GET  /api/sections/{cat_type}         → liste des désignations du catalogue
+    GET  /api/sections/{cat_type}/{designation} → propriétés d'une section
+    POST /api/calculate                   → calcul complet EC3 (Format 1 + 2)
+
+POST /api/calculate — contrat multipart/form-data
+───────────────────────────────────────────────────
+    request   : str (Form)  — JSON CalculationRequest
+                              {"rc_configs": [...], "material_configs": [...]}
+    ele_file  : File         — fichier ELE (liste éléments → numéro RC)
+    lc_files  : list[File]   — un fichier par cas de charge Ansys
+                              (le nom de cas de charge est dérivé du nom de
+                              fichier sans extension, ex. "LC80.txt" → "LC80")
+
+Réponse : CalculationResponse (Format 1 + Format 2 + métadonnées + warnings).
+
+Erreurs
+───────
+    422 — JSON `request` invalide ou ne respecte pas CalculationRequest
+    400 — erreur de parsing ELE/LC, éléments orphelins, RC inconnu,
+           désignation de section introuvable au catalogue
+    500 — erreur de calcul inattendue
+"""
+
+from __future__ import annotations
+
+import json
+import os
+from pathlib import Path
+
+from dotenv import load_dotenv
+from fastapi import FastAPI, File, Form, HTTPException, UploadFile
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import ValidationError
+
+from .catalogue import VALID_TYPES, get_section, list_sections, preload_all
+from .models import CalculationRequest, CalculationResponse
+from .parsers import build_all_lc, parse_ele_file, parse_lc_file, split_axial
+from .results import build_response
+
+load_dotenv()
+
+app = FastAPI(
+    title="Calcul HUOX API",
+    description=(
+        "Post-traitement EC3 (NF EN 1993-1-1 / 1-4) "
+        "pour éléments linéaires en acier issus de calculs EF Ansys."
+    ),
+    version="1.0.0",
+)
+
+# --- CORS ---------------------------------------------------------------
+# En développement : CORS_ORIGINS=http://localhost:5173
+# En production    : CORS_ORIGINS=https://calcul-huox.netlify.app
+_origins_raw = os.getenv("CORS_ORIGINS", "http://localhost:5173")
+origins = [o.strip() for o in _origins_raw.split(",")]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+
+# --- Démarrage ------------------------------------------------------------
+
+@app.on_event("startup")
+def _startup() -> None:
+    """Précharge les catalogues CSV en mémoire (évite la latence au 1er appel)."""
+    preload_all()
+
+
+# --- Endpoints de base ------------------------------------------------------
+
+@app.get("/health", tags=["monitoring"])
+def health_check():
+    """Vérification que l'API est en ligne."""
+    return {"status": "ok", "version": "1.0.0"}
+
+
+# --- Catalogues de sections --------------------------------------------------
+
+@app.get("/api/sections/{cat_type}", tags=["sections"])
+def get_sections_list(cat_type: str, query: str = ""):
+    """
+    Liste les désignations disponibles dans le catalogue.
+
+    Paramètres
+    ----------
+    cat_type : "H" | "U" | "O" | "X"
+    query    : filtre optionnel insensible à la casse (ex. "IPE", "Tci")
+
+    Retour
+    ------
+    {"cat_type": ..., "count": ..., "designations": [...]}
+    """
+    cat_type = cat_type.upper()
+    if cat_type not in VALID_TYPES:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Type de catalogue invalide : '{cat_type}'. Valeurs : {VALID_TYPES}",
+        )
+    designations = list_sections(cat_type, query)
+    return {"cat_type": cat_type, "count": len(designations), "designations": designations}
+
+
+@app.get("/api/sections/{cat_type}/{designation}", tags=["sections"])
+def get_section_properties(cat_type: str, designation: str):
+    """
+    Retourne les propriétés géométriques complètes d'une section du catalogue.
+
+    Utilisé par le frontend pour afficher les propriétés (h, b, A, Iy, Iz…)
+    lors de la sélection d'une désignation dans un RC.
+    """
+    cat_type = cat_type.upper()
+    if cat_type not in VALID_TYPES:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Type de catalogue invalide : '{cat_type}'. Valeurs : {VALID_TYPES}",
+        )
+    try:
+        return get_section(cat_type, designation)
+    except KeyError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+
+# --- Calcul EC3 ---------------------------------------------------------------
+
+def _lc_name_from_filename(filename: str | None) -> str:
+    """
+    Dérive le nom du cas de charge à partir du nom de fichier uploadé.
+
+    "LC80.txt" → "LC80" · "lc_12.dat" → "lc_12" · sans extension → inchangé.
+    Repli sur "LC" si filename est None ou vide (cas théorique, FastAPI
+    fournit toujours un nom mais on reste défensif).
+    """
+    if not filename:
+        return "LC"
+    return Path(filename).stem
+
+
+@app.post("/api/calculate", response_model=CalculationResponse, tags=["calculation"])
+async def calculate(
+    request: str = Form(
+        ...,
+        description=(
+            "JSON CalculationRequest : "
+            '{"rc_configs": [...], "material_configs": [...]}'
+        ),
+    ),
+    ele_file: UploadFile = File(..., description="Fichier ELE (élément → numéro RC)"),
+    lc_files: list[UploadFile] = File(..., description="Fichiers de cas de charge Ansys"),
+) -> CalculationResponse:
+    """
+    Calcul complet EC3 pour tous les RC fournis.
+
+    Étapes
+    ------
+    1. Validation du JSON `request` → CalculationRequest (rc_configs, material_configs)
+    2. Parsing du fichier ELE → mapping element_id → rc_number
+    3. Parsing de chaque fichier LC → cas de charge individuels
+    4. Consolidation ALL_LC (build_all_lc + split_axial)
+    5. Jointure avec le mapping ELE → vérification que tous les éléments
+       référencés dans les LC sont déclarés dans le fichier ELE
+    6. Vérification que tous les numéros RC référencés par les éléments
+       sont bien configurés dans rc_configs
+    7. build_response() → Format 1 + Format 2 + métadonnées + warnings
+    """
+    # ── 1. Validation du JSON request ────────────────────────────────────────
+    try:
+        calc_request = CalculationRequest.model_validate_json(request)
+    except (ValidationError, ValueError) as exc:
+        raise HTTPException(
+            status_code=422,
+            detail=f"Paramètres de calcul invalides : {exc}",
+        ) from exc
+
+    # ── 2. Parsing fichier ELE ───────────────────────────────────────────────
+    try:
+        ele_raw = (await ele_file.read()).decode("utf-8", errors="replace")
+        ele_df = parse_ele_file(ele_raw)
+    except ValueError as exc:
+        msg = str(exc)
+        detail = msg if msg.startswith("Fichier ELE") else f"Fichier ELE : {msg}"
+        raise HTTPException(status_code=400, detail=detail) from exc
+
+    # ── 3. Parsing fichiers LC ───────────────────────────────────────────────
+    if not lc_files:
+        raise HTTPException(status_code=400, detail="Aucun fichier de cas de charge fourni.")
+
+    lc_dfs: dict[str, "object"] = {}
+    for f in lc_files:
+        lc_name = _lc_name_from_filename(f.filename)
+        if lc_name in lc_dfs:
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    f"Cas de charge '{lc_name}' fourni plusieurs fois "
+                    f"(noms de fichiers en double une fois l'extension retirée)."
+                ),
+            )
+        try:
+            raw = (await f.read()).decode("utf-8", errors="replace")
+            lc_dfs[lc_name] = parse_lc_file(raw, lc_name)
+        except ValueError as exc:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Fichier {f.filename} : {exc}",
+            ) from exc
+
+    # ── 4. Consolidation ALL_LC ───────────────────────────────────────────────
+    try:
+        all_lc = build_all_lc(lc_dfs)
+        all_lc = split_axial(all_lc)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+    # ── 5. Jointure avec le mapping élément → RC ─────────────────────────────
+    all_lc = all_lc.merge(ele_df, on="element_id", how="left")
+    missing = all_lc[all_lc["rc_number"].isna()]
+    if not missing.empty:
+        missing_ids = sorted(missing["element_id"].unique().tolist())
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                f"{len(missing_ids)} élément(s) présent(s) dans les fichiers de "
+                f"cas de charge mais absent(s) du fichier ELE : "
+                f"{missing_ids[:10]}{'…' if len(missing_ids) > 10 else ''}"
+            ),
+        )
+    all_lc["rc_number"] = all_lc["rc_number"].astype(int)
+
+    # ── 6. Vérification des RC référencés ────────────────────────────────────
+    configured_rcs = {rc.rc_number for rc in calc_request.rc_configs}
+    used_rcs = set(all_lc["rc_number"].unique().tolist())
+    unknown_rcs = sorted(used_rcs - configured_rcs)
+    if unknown_rcs:
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                f"Numéro(s) RC présent(s) dans le fichier ELE mais sans "
+                f"configuration correspondante dans rc_configs : {unknown_rcs}"
+            ),
+        )
+
+    # ── 7. Calcul ──────────────────────────────────────────────────────────────
+    materials = {m.material_number: m for m in calc_request.material_configs}
+    try:
+        return build_response(calc_request.rc_configs, materials, all_lc)
+    except KeyError as exc:
+        # Désignation de section introuvable au catalogue (get_section)
+        raise HTTPException(status_code=400, detail=f"Erreur de catalogue : {exc}") from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=f"Erreur de calcul : {exc}") from exc
+    except Exception as exc:  # pragma: no cover — filet de sécurité
+        raise HTTPException(
+            status_code=500,
+            detail=f"Erreur interne inattendue lors du calcul : {exc}",
+        ) from exc
