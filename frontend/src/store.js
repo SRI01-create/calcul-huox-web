@@ -335,7 +335,55 @@ export const useStore = create(
           material_configs: materials.map(normalizeMaterial),
         }
       },
+// ── Export / Import de configuration ─────────────────────────────────
 
+      /**
+       * Construit un objet exportable {materials, rc_configs} + métadonnées,
+       * destiné à être sérialisé en JSON et proposé au téléchargement.
+       */
+      exportConfig: () => {
+        const { materials, rcConfigs } = get()
+        return {
+          app: 'calcul-huox-web',
+          export_version: 1,
+          exported_at: new Date().toISOString(),
+          materials,
+          rc_configs: rcConfigs,
+        }
+      },
+
+      /**
+       * Recharge une configuration précédemment exportée. `data` doit être
+       * l'objet déjà parsé (JSON.parse fait par l'appelant). Remplace
+       * entièrement `materials` et `rcConfigs` si le format est valide ;
+       * ne touche à rien sinon.
+       *
+       * @returns {{ok: true} | {ok: false, error: string}}
+       */
+      importConfig: (data) => {
+        if (!data || typeof data !== 'object') {
+          return { ok: false, error: 'Fichier invalide : contenu non reconnu.' }
+        }
+        const materials = data.materials
+        const rcConfigs = data.rc_configs
+        if (!Array.isArray(materials) || materials.length === 0) {
+          return { ok: false, error: 'Fichier invalide : aucun matériau trouvé.' }
+        }
+        if (!Array.isArray(rcConfigs) || rcConfigs.length === 0) {
+          return { ok: false, error: 'Fichier invalide : aucune configuration RC trouvée.' }
+        }
+        const hasValidMaterials = materials.every(
+          (m) => m && typeof m === 'object' && m.material_number !== undefined
+        )
+        const hasValidRC = rcConfigs.every(
+          (rc) => rc && typeof rc === 'object' && rc.rc_number !== undefined
+        )
+        if (!hasValidMaterials || !hasValidRC) {
+          return { ok: false, error: 'Fichier invalide : structure de matériau ou de RC incorrecte.' }
+        }
+        set({ materials, rcConfigs, result: null, error: null })
+        return { ok: true }
+      },
       // ── Calcul ─────────────────────────────────────────────────────────────
 
       /**
