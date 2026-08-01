@@ -23,6 +23,15 @@ export default function CalculateButton({ onSuccess }) {
   const clearError          = useStore((s) => s.clearError)
   const getValidationErrors = useStore((s) => s.getValidationErrors)
 
+  // Ces 4 lignes ne sont pas utilisées directement dans le JSX, mais elles
+  // sont indispensables : sans elles, le composant ne se re-rend jamais
+  // quand les fichiers ou la configuration RC/matériaux changent, et les
+  // erreurs de validation affichées restent figées sur un ancien état.
+  const materials = useStore((s) => s.materials)
+  const rcConfigs = useStore((s) => s.rcConfigs)
+  const eleFile   = useStore((s) => s.eleFile)
+  const lcFiles   = useStore((s) => s.lcFiles)
+
   // Calculé directement au render (pas de useEffect) — évite la boucle infinie.
   // getValidationErrors() est une fonction pure synchrone (pas d'appel réseau).
   const validationErrors = getValidationErrors()
