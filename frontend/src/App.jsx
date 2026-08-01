@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 
 import RCForm          from './components/RCForm'
 import MaterialForm    from './components/MaterialForm'
+import ConfigTransfer  from './components/ConfigTransfer'
 import FileUpload      from './components/FileUpload'
 import CalculateButton from './components/CalculateButton'
 // Phase 22 : ResultsFormat1 activé
