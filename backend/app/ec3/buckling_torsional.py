@@ -17,12 +17,25 @@ Formules extraites de la feuille U, ligne 61
 ────────────────────────────────────────────
     CF = (1/i₀²) × (G×It + π²×E×IW/(crT×L)²)
 
-    CG = (1/(2β)) × ((Ncr_T+Ncr_y) − √((Ncr_T+Ncr_y)² − 4β×Ncr_T×Ncr_y))
+    CG = (1/(2β)) × ((Ncr_T+CB) − √((Ncr_T+CB)² − 4β×Ncr_T×CB))
          avec β = 1 − (ym/i₀)²
+         et CB = Ncr,min = MIN(Ncr,y ; Ncr,z)   ⚠ PAS Ncr,y seul
 
     CJ = χ(λ̄_TF, α_TF, λ₀=0.2) × A × fy / γM1
          avec α_TF = 0.34 (inox) | α(curve_z) (carbone)
          et λ̄_TF = √(A×fy/Ncr_TF)
+
+    ⚠ Point vérifié (Sem, confirmé CTICM, août 2026) : la référence CG61 pointe
+    vers CB61 (Ncr,min, colonne définie en Phase 10 — voir buckling_flexural.py),
+    pas vers une cellule Ncr,y dédiée. Vérifié bit-à-bit sur le classeur de
+    référence (UPN 120, ligne 61) : réinjecter Ncr,min dans la formule CG
+    reproduit exactement CG61 = 1 043 827,36 N ; réinjecter le véritable Ncr,y
+    (≈ 11 788 009 N) donne une tout autre valeur. C'est cette convention côté
+    Excel — non strictement l'écriture normative du §6.3.1.4, mais admise en
+    pratique par les bureaux d'études et confirmée par le CTICM — qui fait foi
+    ici : le code utilise donc Ncr_min (et non Ncr_y) en entrée de Ncr,TF.
+    Pour les UPN/UPE c'est presque toujours l'axe faible z-z qui gouverne
+    (Iz ≪ Iy), donc Ncr_min = Ncr_z dans l'immense majorité des cas.
 
 Notation géométrique
 ────────────────────
@@ -114,7 +127,7 @@ def ncr_torsional(
 
 def ncr_flex_torsional(
     Ncr_T: float,
-    Ncr_y: float,
+    Ncr_min: float,
     ym_mm: float,
     i0_sq_m: float,
 ) -> float:
@@ -123,12 +136,14 @@ def ncr_flex_torsional(
     pour une section monosymétrique (§6.3.1.4 éq. 6.54).
 
         β   = 1 − (ym/i₀)²
-        Ncr,TF = (1/(2β)) × ((Ncr,T + Ncr,y) − √(…))
+        Ncr,TF = (1/(2β)) × ((Ncr,T + Ncr,min) − √(…))
 
     Paramètres
     ----------
     Ncr_T     : charge critique torsion pure (N)
-    Ncr_y     : charge critique flexion axe fort y (N, depuis Phase 10)
+    Ncr_min   : MIN(Ncr,y ; Ncr,z), depuis Phase 10 (N) — PAS Ncr,y seul.
+                Convention Excel (col CB) reprise ici volontairement :
+                voir note en tête de module (vérifiée bit-à-bit + CTICM).
     ym_mm     : distance centroïde→centre cisaillement (mm, col CA Excel)
     i0_sq_m   : i₀² en m² (depuis polar_radius_sq)
 
@@ -139,12 +154,13 @@ def ncr_flex_torsional(
     Correspondance Excel (feuille U, col CG)
     ────────────────────────────────────────
     (1/(2×(1−(CA/1000/i₀)²)))×((CF+CB)−√((CF+CB)²−4×(1−(CA/1000/i₀)²)×CF×CB))
+    CB = Ncr,min (Phase 10), pas une colonne Ncr,y dédiée.
     """
     ym_m  = ym_mm / 1000.0
     i0_m  = math.sqrt(i0_sq_m)
     beta  = 1.0 - (ym_m / i0_m) ** 2
-    sum_  = Ncr_T + Ncr_y
-    discriminant = sum_ ** 2 - 4.0 * beta * Ncr_T * Ncr_y
+    sum_  = Ncr_T + Ncr_min
+    discriminant = sum_ ** 2 - 4.0 * beta * Ncr_T * Ncr_min
     # discriminant ≥ 0 par construction (Schwartz)
     return (sum_ - math.sqrt(max(0.0, discriminant))) / (2.0 * beta)
 
@@ -212,7 +228,7 @@ def torsional_buckling(
     curve_z: str,
     CO: str,
     # Depuis Phase 10
-    Ncr_y: float,
+    Ncr_min: float,
     lambda_bar_y: float,
     lambda_bar_z: float,
     ratio_Ncr: float,
@@ -246,7 +262,9 @@ def torsional_buckling(
     curve_z         : courbe de flambement axe z — aussi utilisée pour Nb,Rd,TF
     CO              : configuration LTB — "L" | "S" | "F"
                       (détermine λ₀ pour CE mis à jour)
-    Ncr_y           : charge critique flexion axe y depuis Phase 10 (N)
+    Ncr_min         : MIN(Ncr,y ; Ncr,z) depuis Phase 10 (N) — col CB Excel.
+                      Injecté tel quel dans Ncr,TF (convention Excel/CTICM,
+                      voir note en tête de module) ; PAS Ncr,y seul.
     lambda_bar_y    : λ̄_y depuis Phase 10
     lambda_bar_z    : λ̄_z depuis Phase 10
     ratio_Ncr       : CC depuis Phase 10 = NEd_c / Ncr_min_flexural
@@ -302,7 +320,7 @@ def torsional_buckling(
     Ncr_T = ncr_torsional(G, It, E, IW, crT, L, i0_sq)
 
     # ── 3. Ncr,TF — flexion-torsion (CG) ────────────────────────────────────
-    Ncr_TF = ncr_flex_torsional(Ncr_T, Ncr_y, ym_mm, i0_sq)
+    Ncr_TF = ncr_flex_torsional(Ncr_T, Ncr_min, ym_mm, i0_sq)
 
     # ── 4. Élancements relatifs λ̄_T et λ̄_TF ───────────────────────────────
     fy_Pa  = fy * 1_000_000.0
