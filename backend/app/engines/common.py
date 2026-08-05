@@ -161,7 +161,7 @@ def compute_stability(
         fy=fy, E=E, G=G, gamma_M1=gamma_M1,
         is_stainless=is_stainless,
         L=L, crT=crT, curve_z=curve_z, CO=fabrication,
-        Ncr_y=p10["Ncr_y"],
+        Ncr_min=p10["Ncr_min"],
         lambda_bar_y=p10["lambda_bar_y"],
         lambda_bar_z=p10["lambda_bar_z"],
         ratio_Ncr=p10["ratio_Ncr"],
