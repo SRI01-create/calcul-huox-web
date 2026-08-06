@@ -264,9 +264,10 @@ def _check_row(
         ratio_Nb_F = None
 
     # ── Phase 13 : déversement (ratio par ligne, Mb,Rd déjà pré-calculé) ──
+    # Excel arrondit toujours au centième supérieur : CV = ABS(ROUNDUP(My/Mb,Rd, 2))
     Mb_Rd = pre["Mb_Rd"]
     if Mb_Rd and abs(My) > 0:
-        ratio_Mb = abs(My) / Mb_Rd
+        ratio_Mb = math.ceil(abs(My) / Mb_Rd * 100.0) / 100.0
     elif Mb_Rd:
         ratio_Mb = 0.0
     else:
