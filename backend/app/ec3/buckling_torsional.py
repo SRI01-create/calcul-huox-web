@@ -352,4 +352,5 @@ def torsional_buckling(
         "ratio_Nb_TF":      r_TF,
         "lambda_bar_max":   lam_max,
         "buckling_ignored": ignored,
-    }
+}
+    
