@@ -71,8 +71,20 @@ def _chi_LT_for_k(
     - α_LT_mod = formule H-type (même sur feuilles U/O/X)
     - Pas de borne 1/λ̄²
     - MIN(1, chi_raw)
+    - Formule d'Ayrton-Perry standard : Φ²−λ̄² sous la racine (§6.3.2.2 éq. 6.56).
 
-    Extrait des formules DE..DH (identiques sur les 4 feuilles).
+    ⚠ Écart Excel identifié (feuille H, ligne 385, IPE 80, My=91.9 N·m /
+    Mz=3.1 N·m) : les colonnes DE/DF/DG/DH du classeur utilisent en réalité
+    Φ²+λ̄² (vérifié bit-à-bit : χ implicite = 0.56425174... avec +, contre
+    0.81628... avec − — Excel calcule bien 0.56425174...). Sem a recontrôlé
+    le classeur lui-même et confirmé qu'il s'agit d'une erreur de formule
+    Excel (contrairement à Ncr,TF/CB61, qui est un choix d'ingénieur déclaré
+    et confirmé CTICM) : décision (Sem, session août 2026) de corriger ici
+    vers la formule normative plutôt que de reproduire Excel. Le code
+    s'écarte donc volontairement du classeur sur ce point précis.
+
+    Extrait des formules DE..DH (identiques sur les 4 feuilles) — hors ce
+    point de désaccord assumé.
     """
     if lambda_bar_LT <= 0:
         return 1.0
@@ -83,7 +95,7 @@ def _chi_LT_for_k(
     else:
         alpha = max(0.0, 0.5 - 0.25 * ratio * lam2)
     Phi     = 0.5 * (1.0 + alpha * (lambda_bar_LT - 0.2) + lam2)
-    disc    = max(0.0, Phi ** 2 - lam2)
+    disc    = max(0.0, Phi ** 2 - lam2)   # Ayrton-Perry standard (voir note : Excel a un bug ici)
     chi_raw = 1.0 / (Phi + math.sqrt(disc))
     return min(1.0, chi_raw)
 
@@ -356,8 +368,10 @@ def interaction_factors(
     Nb_TF = Nb_Rd_TF or 1e12
     if section_type == "U":
         Nb_min_CW = min(Nb_y, Nb_z, Nb_TF)
+        Nb_min_CX = Nb_min_CW    # Excel U : CW *et* CX = E/MIN(CH,CI,CJ), même dénominateur
     else:
         Nb_min_CW = Nb_y    # CW utilise CH (Nb,Rd,y) pour H, O, X
+        Nb_min_CX = Nb_z    # CX utilise CI (Nb,Rd,z) pour H, O, X
 
     # Résistance My dans CW : Mb,Rd si LTB disponible, sinon My,c,Rd
     has_ltb = (section_type in ("H", "U")) and (Mb_Rd is not None) and not is_stainless
@@ -394,9 +408,9 @@ def interaction_factors(
     if NEd_c == 0.0 and section_type in ("O", "X"):
         ratio_CX = 0.0
     elif is_stainless:
-        ratio_CX = _ratio_comb(Nb_z, DW, M_Rd_y_CX, DV)
+        ratio_CX = _ratio_comb(Nb_min_CX, DW, M_Rd_y_CX, DV)
     else:
-        ratio_CX = _ratio_comb(Nb_z, kzy, M_Rd_y_CX, kzz)
+        ratio_CX = _ratio_comb(Nb_min_CX, kzy, M_Rd_y_CX, kzz)
 
     return {
         "DC": DC, "DD": DD, "DM": DM, "DN": DN,
