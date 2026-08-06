@@ -17,6 +17,7 @@ Convention de retour "None" (= "X" Excel)
 
 from __future__ import annotations
 
+import math
 from typing import Optional
 
 from ..ec3.buckling_flexural import flexural_buckling
@@ -96,13 +97,18 @@ def ratio_Nb_torsional(
 
 def ratio_LTB(My_Ed: float, Mb_Rd: Optional[float]) -> Optional[float]:
     """
-    ratio_Mb = |My,Ed| / Mb,Rd   (colonne CV, H et U uniquement).
+    ratio_Mb = ABS(ROUNDUP(My,Ed / Mb,Rd, 2))   (colonne CV, H et U uniquement).
 
     None si Mb,Rd est None (O, X, classe 4, ou λ_LT0 ≥ ... ).
+    Excel arrondit toujours au centième supérieur (vérifié formule CV61,
+    feuilles H et U) — comportement reproduit ici, contrairement aux autres
+    ratios (CC/CK/CL/BR) qui restent en pleine précision côté Excel.
     """
     if Mb_Rd is None:
         return None
-    return 0.0 if My_Ed == 0.0 else abs(My_Ed) / Mb_Rd
+    if My_Ed == 0.0:
+        return 0.0
+    return math.ceil(abs(My_Ed) / Mb_Rd * 100.0) / 100.0
 
 
 def overall_max(*vals: Optional[float]) -> Optional[float]:
@@ -197,4 +203,5 @@ def compute_stability(
         "lambda_bar_LT":  p13["lambda_bar_LT"],
         "lambda_LT0":     p13["lambda_LT0"],
         "chi_LT_val":     p13["chi_LT_val"],
-    }
+  }
+  
