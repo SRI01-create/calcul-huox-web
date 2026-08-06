@@ -222,7 +222,7 @@ def ltb_resistance(
         lambda_bar_LT   (float | None)     — √(Wy·fy/Mcr)              (CS)
         LTB_ignored     (bool  | None)     — critère CT                 (CT)
         Mb_Rd           (float | None, N·m)— χ_LT·Wy·fy/γM1            (CU)
-        ratio_LTB       (float | None)     — ABS(My,Ed/Mb,Rd)          (CV)
+        ratio_LTB       (float | None)     — ABS(ROUNDUP(My,Ed/Mb,Rd, 2)) (CV)
         lambda_LT0      (float | None)     — λ_LT0 effectif
         alpha_LT        (float | None)     — α_LT effectif
         chi_LT_val      (float | None)     — χ_LT
@@ -296,7 +296,9 @@ def ltb_resistance(
         Mb      = chi_val * Wy * fy_Pa / gamma_M1    # CU
 
         # ── CV — ratio ───────────────────────────────────────────────────────
-        r_LTB = 0.0 if My_Ed == 0.0 else abs(My_Ed / Mb)
+        # Excel arrondit toujours au centième supérieur : ROUNDUP(My,Ed/Mb,Rd, 2)
+        # (vérifié formule CV61, feuilles H et U — ni CC/CK/CL/BR ne font ça)
+        r_LTB = 0.0 if My_Ed == 0.0 else math.ceil(abs(My_Ed / Mb) * 100.0) / 100.0
 
     return {
         "ratio_Mcr":     r_Mcr,
@@ -307,4 +309,5 @@ def ltb_resistance(
         "lambda_LT0":    lam_LT0,
         "alpha_LT":      alpha,
         "chi_LT_val":    chi_val,
-    }
+                   }
+    
