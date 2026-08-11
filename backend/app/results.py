@@ -222,17 +222,22 @@ def build_response(
     rc_configs: list[RCConfig],
     materials: dict[int, MaterialConfig],
     all_lc: pd.DataFrame,
+    extra_warnings: list[str] | None = None,
 ) -> CalculationResponse:
     """
     Construit la réponse complète de POST /api/calculate.
 
     Paramètres
     ----------
-    rc_configs : liste des configurations RC (CalculationRequest.rc_configs)
-    materials  : dict {material_number → MaterialConfig}
-    all_lc     : DataFrame complet des efforts internes
-                 [element_id, rc_number, lc_name, NEd_t, NEd_c, Fy, Fz, Mx, My, Mz]
-                 — issu de parsers.split_axial(build_all_lc(...))
+    rc_configs     : liste des configurations RC (CalculationRequest.rc_configs)
+    materials      : dict {material_number → MaterialConfig}
+    all_lc         : DataFrame complet des efforts internes, déjà filtré des
+                     éléments orphelins / RC non configurés (voir main.py)
+                     [element_id, rc_number, lc_name, NEd_t, NEd_c, Fy, Fz, Mx, My, Mz]
+                     — issu de parsers.split_axial(build_all_lc(...))
+    extra_warnings : avertissements déjà générés en amont (main.py, étapes 5-6 :
+                     éléments/RC écartés du calcul) — préfixés aux warnings
+                     générés ici (classe 4, voilement par cisaillement)
 
     Retour
     ------
@@ -241,7 +246,7 @@ def build_response(
     """
     format2 = run_all(rc_configs, materials, all_lc)
     format1 = build_format1(rc_configs, materials, format2)
-    warnings = build_warnings(format1)
+    warnings = list(extra_warnings or []) + build_warnings(format1)
 
     nb_elements   = len({r.element_id for r in format2})
     nb_load_cases = len({r.lc_name for r in format2})
@@ -254,3 +259,4 @@ def build_response(
         nb_combinations=len(format2),
         warnings=warnings,
     )
+    
