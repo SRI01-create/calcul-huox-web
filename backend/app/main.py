@@ -270,6 +270,47 @@ async def calculate(
         )
         all_lc = all_lc[all_lc["rc_number"].isin(configured_rcs)].copy()
 
+    # ── 6bis. Éléments configurés mais sans aucune donnée de charge ──────────
+    # Un élément déclaré dans l'ELE avec un RC configuré est censé être
+    # vérifié. S'il n'apparaît dans aucun fichier LC, ce n'est pas un choix
+    # volontaire (contrairement aux étapes 5-6) mais probablement un oubli
+    # d'export CdC ou une erreur de numérotation — signalé, non bloquant.
+    calculated_ele_ids = set(
+        ele_df.loc[ele_df["rc_number"].isin(configured_rcs), "element_id"]
+    )
+    loaded_ele_ids = set(all_lc["element_id"].unique().tolist())
+    never_loaded = sorted(calculated_ele_ids - loaded_ele_ids)
+    if never_loaded:
+        extra_warnings.append(
+            f"{len(never_loaded)} élément(s) déclaré(s) dans le fichier ELE "
+            f"avec un RC configuré, mais absent(s) de tous les fichiers de "
+            f"cas de charge — aucune vérification effectuée faute de "
+            f"données (vérifier l'export CdC ou la numérotation) : "
+            f"{never_loaded[:10]}{'…' if len(never_loaded) > 10 else ''}"
+        )
+
+    # ── 6ter. Éléments couverts par certains CdC seulement (pas tous) ────────
+    # Un élément configuré présent dans au moins un LC mais absent d'un ou
+    # plusieurs autres n'est vérifié que sur les CdC où il a des données :
+    # l'enveloppe peut être incomplète si le CdC manquant aurait été
+    # dimensionnant pour lui — signalé, non bloquant (peut être volontaire
+    # si les CdC sont scindés par zone de structure).
+    all_lc_names = set(lc_dfs.keys())
+    if len(all_lc_names) > 1:
+        lc_coverage = all_lc.groupby("element_id")["lc_name"].agg(set)
+        partial = sorted(
+            eid for eid, lcs in lc_coverage.items()
+            if eid in calculated_ele_ids and lcs != all_lc_names
+        )
+        if partial:
+            extra_warnings.append(
+                f"{len(partial)} élément(s) avec RC configuré présent(s) "
+                f"dans certains fichiers de cas de charge seulement (pas "
+                f"tous) — vérifiés uniquement sur les CdC où ils ont des "
+                f"données, l'enveloppe peut être incomplète : "
+                f"{partial[:10]}{'…' if len(partial) > 10 else ''}"
+            )
+
     # ── 7. Calcul ──────────────────────────────────────────────────────────────
     materials = {m.material_number: m for m in calc_request.material_configs}
     try:
@@ -284,3 +325,4 @@ async def calculate(
             status_code=500,
             detail=f"Erreur interne inattendue lors du calcul : {exc}",
         ) from exc
+    
