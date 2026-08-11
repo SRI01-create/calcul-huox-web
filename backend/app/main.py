@@ -245,8 +245,7 @@ async def calculate(
         extra_warnings.append(
             f"{len(missing_ids)} élément(s) présent(s) dans les fichiers de "
             f"cas de charge mais absent(s) du fichier ELE — écarté(s) du "
-            f"calcul (probablement des éléments non structurels : rigides, "
-            f"connecteurs, collecteurs...) : "
+            f"calcul : "
             f"{missing_ids[:10]}{'…' if len(missing_ids) > 10 else ''}"
         )
         all_lc = all_lc[all_lc["rc_number"].notna()].copy()
