@@ -25,9 +25,15 @@ Réponse : CalculationResponse (Format 1 + Format 2 + métadonnées + warnings).
 Erreurs
 ───────
     422 — JSON `request` invalide ou ne respecte pas CalculationRequest
-    400 — erreur de parsing ELE/LC, éléments orphelins, RC inconnu,
-           désignation de section introuvable au catalogue
+    400 — erreur de parsing ELE/LC, désignation de section introuvable
+           au catalogue
     500 — erreur de calcul inattendue
+
+    Non bloquant (→ `warnings` dans la réponse, pas d'erreur HTTP) :
+    éléments présents dans les CdC mais absents de l'ELE, ou numéro RC
+    présent dans l'ELE mais non configuré — écartés du calcul plutôt que
+    de bloquer (cas des éléments d'aide à la modélisation EF : rigides,
+    connecteurs, collecteurs...).
 """
 
 from __future__ import annotations
@@ -170,10 +176,11 @@ async def calculate(
     2. Parsing du fichier ELE → mapping element_id → rc_number
     3. Parsing de chaque fichier LC → cas de charge individuels
     4. Consolidation ALL_LC (build_all_lc + split_axial)
-    5. Jointure avec le mapping ELE → vérification que tous les éléments
-       référencés dans les LC sont déclarés dans le fichier ELE
-    6. Vérification que tous les numéros RC référencés par les éléments
-       sont bien configurés dans rc_configs
+    5. Jointure avec le mapping ELE → éléments des CdC absents de l'ELE
+       écartés du calcul (warning, non bloquant)
+    6. Numéros RC référencés par les éléments mais non configurés dans
+       rc_configs → éléments concernés écartés du calcul (warning, non
+       bloquant)
     7. build_response() → Format 1 + Format 2 + métadonnées + warnings
     """
     # ── 1. Validation du JSON request ────────────────────────────────────────
@@ -226,37 +233,48 @@ async def calculate(
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
     # ── 5. Jointure avec le mapping élément → RC ─────────────────────────────
+    # Non bloquant : un élément présent dans les CdC mais absent de l'ELE est
+    # généralement un outil de modélisation EF (élément rigide, connecteur,
+    # collecteur...) sans vocation à être vérifié. On l'écarte du calcul
+    # plutôt que de bloquer, et on garde une trace dans `warnings`.
     all_lc = all_lc.merge(ele_df, on="element_id", how="left")
+    extra_warnings: list[str] = []
     missing = all_lc[all_lc["rc_number"].isna()]
     if not missing.empty:
         missing_ids = sorted(missing["element_id"].unique().tolist())
-        raise HTTPException(
-            status_code=400,
-            detail=(
-                f"{len(missing_ids)} élément(s) présent(s) dans les fichiers de "
-                f"cas de charge mais absent(s) du fichier ELE : "
-                f"{missing_ids[:10]}{'…' if len(missing_ids) > 10 else ''}"
-            ),
+        extra_warnings.append(
+            f"{len(missing_ids)} élément(s) présent(s) dans les fichiers de "
+            f"cas de charge mais absent(s) du fichier ELE — écarté(s) du "
+            f"calcul (probablement des éléments non structurels : rigides, "
+            f"connecteurs, collecteurs...) : "
+            f"{missing_ids[:10]}{'…' if len(missing_ids) > 10 else ''}"
         )
+        all_lc = all_lc[all_lc["rc_number"].notna()].copy()
     all_lc["rc_number"] = all_lc["rc_number"].astype(int)
 
     # ── 6. Vérification des RC référencés ────────────────────────────────────
+    # Même logique : un numéro RC présent dans l'ELE mais non configuré
+    # (élément volontairement non calculé) écarte ses éléments plutôt que
+    # de bloquer tout le calcul.
     configured_rcs = {rc.rc_number for rc in calc_request.rc_configs}
     used_rcs = set(all_lc["rc_number"].unique().tolist())
     unknown_rcs = sorted(used_rcs - configured_rcs)
     if unknown_rcs:
-        raise HTTPException(
-            status_code=400,
-            detail=(
-                f"Numéro(s) RC présent(s) dans le fichier ELE mais sans "
-                f"configuration correspondante dans rc_configs : {unknown_rcs}"
-            ),
+        excluded_elements = sorted(
+            all_lc.loc[all_lc["rc_number"].isin(unknown_rcs), "element_id"].unique().tolist()
         )
+        extra_warnings.append(
+            f"Numéro(s) RC présent(s) dans le fichier ELE mais sans "
+            f"configuration correspondante dans rc_configs — éléments "
+            f"concernés écartés du calcul : RC {unknown_rcs}, éléments "
+            f"{excluded_elements[:10]}{'…' if len(excluded_elements) > 10 else ''}"
+        )
+        all_lc = all_lc[all_lc["rc_number"].isin(configured_rcs)].copy()
 
     # ── 7. Calcul ──────────────────────────────────────────────────────────────
     materials = {m.material_number: m for m in calc_request.material_configs}
     try:
-        return build_response(calc_request.rc_configs, materials, all_lc)
+        return build_response(calc_request.rc_configs, materials, all_lc, extra_warnings=extra_warnings)
     except KeyError as exc:
         # Désignation de section introuvable au catalogue (get_section)
         raise HTTPException(status_code=400, detail=f"Erreur de catalogue : {exc}") from exc
