@@ -25,8 +25,9 @@ Colonnes Excel de référence (formules identiques H/U/O/X sauf gardes)
     DA   kzy (carbone) Cmy·CmLT·DP/(1−NEd/Ncr_min)·(1/C_zy)·0.6·(wy/wz)^0.5 (cl.1/2)
     DB   kzz (carbone) Cmz·DP/(1−NEd/Ncr_min)/C_zz   (cl.1/2)
     DU   kyy (inox)    MIN(MAX(1.2, 1+2·(λ̄_max−0.5)·NEd/Nb_y), 1.2+2·NEd/Nb_y)
-    DV   kyz/kzy/kzz (inox) idem avec Nb_z
-    DW   1.0           constante (cellule $DW$56)
+                        Nb_y → MIN(Nb,Rd,y, Nb,Rd,TF) pour U, Nb,Rd,y seul sinon
+    DV   kzz (inox)    idem avec Nb_z → MIN(Nb,Rd,z, Nb,Rd,TF) pour U, Nb,Rd,z seul sinon
+    DW   1.0           constante (cellule $DW$56) = kLT (H/U uniquement)
     CW   ratio eq.1    ROUNDUP(NEd/Nb_Rd_min_y + |kyy·My/M_Rd_y| + |kyz·Mz/Mz_c_Rd|, 2)
     CX   ratio eq.2    ROUNDUP(NEd/Nb_Rd_z     + |kzy·My/M_Rd_y| + |kzz·Mz/Mz_c_Rd|, 2)
 
@@ -36,7 +37,11 @@ Notes importantes
                     MIN(1, χ) sans borne 1/λ̄² — identique sur les 4 feuilles.
   Mz terme CW/CX  : toujours Mz,c,Rd (phase 7), pas de déversement sur z.
   My terme CW     : Mb,Rd si LTB (H+carbon, U+carbon), My,c,Rd sinon (O, X, inox).
-  My terme CX     : Mb,Rd pour H+carbon et H+inox (DW=1 × My/Mb,Rd); My,c,Rd pour O/X.
+  My terme CX     : Mb,Rd pour H/U (carbone et inox, coeff. inox = DW = kLT) ;
+                    My,c,Rd pour O/X (coeff. inox = DU = ky). Confirmé par Sem
+                    (session août 2026, éq. 5.16/5.17 NF EN 1993-1-4 §5.2.3) :
+                    point autrefois non tranché, désormais résolu — voir
+                    _ratio_comb / branche CX ci-dessous.
   U section CW/CX : Nb,Rd,min = MIN(Nb,Rd,y, Nb,Rd,z, Nb,Rd,TF) (Phase 11).
   O/X sections    : IF(NEd_c=0, 0, ROUNDUP(...)) — retournent 0 si pas de compression.
   Classe 4        : retourne "X" (None) dans Excel → None en Python.
@@ -348,20 +353,7 @@ def interaction_factors(
         kzy = Cmy * CmLT * DP / denom_k
         kzz = Cmz * DP  / denom_k
 
-    # ── k inox (DU, DV, DW) ───────────────────────────────────────────
-    DW = 1.0   # constante $DW$56
-    if Nb_Rd_y and Nb_Rd_y > 0:
-        DU = min(max(1.2, 1.0 + 2.0*(lam-0.5)*NEd_c/Nb_Rd_y),
-                 1.2 + 2.0*NEd_c/Nb_Rd_y)
-    else:
-        DU = 1.2
-    if Nb_Rd_z and Nb_Rd_z > 0:
-        DV = min(max(1.2, 1.0 + 2.0*(lam-0.5)*NEd_c/Nb_Rd_z),
-                 1.2 + 2.0*NEd_c/Nb_Rd_z)
-    else:
-        DV = 1.2
-
-    # ── Résistances pour CW/CX ────────────────────────────────────────
+    # ── Résistances pour CW/CX/DU/DV ────────────────────────────────────
     # Nb,Rd,min (compression) — CW utilise l'axe gouvernant
     Nb_y = Nb_Rd_y or 1e12
     Nb_z = Nb_Rd_z or 1e12
@@ -372,6 +364,29 @@ def interaction_factors(
     else:
         Nb_min_CW = Nb_y    # CW utilise CH (Nb,Rd,y) pour H, O, X
         Nb_min_CX = Nb_z    # CX utilise CI (Nb,Rd,z) pour H, O, X
+
+    # ── k inox (DU, DV, DW) ───────────────────────────────────────────
+    # Dénominateur DU/DV : MIN(Nb,Rd,y[/z], Nb,Rd,TF) pour les sections U
+    # (formule Excel U60/61 : MIN(CH,CJ) pour DU, MIN(CI,CJ) pour DV — même
+    # logique que Nb,min utilisé pour CW/CX carbone, Phase 11) ; Nb,Rd,y/z
+    # seul pour H/O/X (formule H60/O60/X60 identique, Nb,Rd,TF n'existe pas
+    # hors U). ⚠ Non vérifiable numériquement (aucune donnée inox réelle
+    # dans le classeur) — confirmé par lecture directe des formules Excel
+    # uniquement, à contrôler dès qu'un cas réel en acier inoxydable sera
+    # disponible.
+    DW = 1.0   # constante $DW$56
+    Nb_y_for_DU = min(Nb_y, Nb_TF) if section_type == "U" else Nb_y
+    Nb_z_for_DV = min(Nb_z, Nb_TF) if section_type == "U" else Nb_z
+    if Nb_y_for_DU > 0 and Nb_y_for_DU < 1e12:
+        DU = min(max(1.2, 1.0 + 2.0*(lam-0.5)*NEd_c/Nb_y_for_DU),
+                 1.2 + 2.0*NEd_c/Nb_y_for_DU)
+    else:
+        DU = 1.2
+    if Nb_z_for_DV > 0 and Nb_z_for_DV < 1e12:
+        DV = min(max(1.2, 1.0 + 2.0*(lam-0.5)*NEd_c/Nb_z_for_DV),
+                 1.2 + 2.0*NEd_c/Nb_z_for_DV)
+    else:
+        DV = 1.2
 
     # Résistance My dans CW : Mb,Rd si LTB disponible, sinon My,c,Rd
     has_ltb = (section_type in ("H", "U")) and (Mb_Rd is not None) and not is_stainless
@@ -408,7 +423,16 @@ def interaction_factors(
     if NEd_c == 0.0 and section_type in ("O", "X"):
         ratio_CX = 0.0
     elif is_stainless:
-        ratio_CX = _ratio_comb(Nb_min_CX, DW, M_Rd_y_CX, DV)
+        # Coefficient du terme My : DW (kLT, feuilles H/U — sections sujettes au
+        # déversement) si LTB, DU (ky, feuilles O/X — pas de déversement) sinon.
+        # Vérifié bit-à-bit sur le classeur (formules CX60) :
+        #   H60/U60 : ABS(IF(DX60="inox", DW60, DA60)*I60/CU60)   → DW
+        #   O60/X60 : ABS(IF(DX60="inox", DU60, DA60)*I60/(AX60*P60/Q60)) → DU
+        # Confirmé par Sem (session août 2026) : conforme aux éq. (5.16)/(5.17)
+        # de NF EN 1993-1-4 §5.2.3 — ce n'était pas un choix d'ingénieur mais
+        # un oubli de différenciation lors de l'implémentation initiale.
+        ky_CX = DW if has_Mb_CX else DU
+        ratio_CX = _ratio_comb(Nb_min_CX, ky_CX, M_Rd_y_CX, DV)
     else:
         ratio_CX = _ratio_comb(Nb_min_CX, kzy, M_Rd_y_CX, kzz)
 
