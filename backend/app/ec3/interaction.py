@@ -392,12 +392,14 @@ def interaction_factors(
     has_ltb = (section_type in ("H", "U")) and (Mb_Rd is not None) and not is_stainless
     M_Rd_y_CW = Mb_Rd if has_ltb else My_c_Rd   # dénominateur du terme My dans CW
 
-    # Résistance My dans CX : Mb,Rd pour H (carbone et inox), My,c,Rd sinon
-    has_Mb_CX = (section_type in ("H", "U")) and (Mb_Rd is not None)
-    M_Rd_y_CX = Mb_Rd if has_Mb_CX else My_c_Rd
-
     # γM0/γM1 pour les résistances section (Mz,c,Rd est stocké avec γM1)
     gM_ratio = gM0 / gM1
+
+    # Résistance My dans CX : Mb,Rd pour H/U (LTB), My,c,Rd sinon (O/X).
+    # Pour l'inox, la branche CX applique en plus γM0/γM1 sur le terme My,c,Rd
+    # (formule Excel O60/X60 : AX*P/Q = My,c,Rd·γM0/γM1) — voir plus bas.
+    has_Mb_CX = (section_type in ("H", "U")) and (Mb_Rd is not None)
+    M_Rd_y_CX = Mb_Rd if has_Mb_CX else My_c_Rd
 
     def _ratio_comb(Nb_Rd_denom: float, k_y: float, M_y_denom: float,
                     k_z: float, My_denom_override: Optional[float] = None) -> float:
@@ -415,7 +417,14 @@ def interaction_factors(
     if NEd_c == 0.0 and section_type in ("O", "X"):
         ratio_CW = 0.0
     elif is_stainless:
-        ratio_CW = _ratio_comb(Nb_min_CW, DU, My_c_Rd * gM0, DV)
+        # Dénominateur du terme My : My,c,Rd converti de γM0 à γM1 (formule
+        # Excel CW60/O60 : AX*P/Q = My,c,Rd·γM0/γM1). My_c_Rd (paramètre
+        # d'entrée) est déjà My,c,Rd calculé avec γM0 (cf. Mc_Rd(...,gM0) dans
+        # les moteurs) → utiliser gM_ratio (γM0/γM1), pas gM0 seul.
+        # Bug trouvé et corrigé le 17/08/2026 : l'ancien code multipliait par
+        # gM0 (=1.1 en inox) au lieu de gM_ratio (=1.0 si γM0=γM1, cas normal
+        # en inox NF EN 1993-1-4) → ratio_CW sous-estimé d'environ 10 %.
+        ratio_CW = _ratio_comb(Nb_min_CW, DU, My_c_Rd * gM_ratio, DV)
     else:
         ratio_CW = _ratio_comb(Nb_min_CW, kyy, M_Rd_y_CW, kyz)
 
@@ -432,7 +441,11 @@ def interaction_factors(
         # de NF EN 1993-1-4 §5.2.3 — ce n'était pas un choix d'ingénieur mais
         # un oubli de différenciation lors de l'implémentation initiale.
         ky_CX = DW if has_Mb_CX else DU
-        ratio_CX = _ratio_comb(Nb_min_CX, ky_CX, M_Rd_y_CX, DV)
+        # Pour O/X (pas de LTB), le dénominateur My,c,Rd doit lui aussi être
+        # converti γM0→γM1 (formule Excel O60/X60 : AX*P/Q), comme pour CW ;
+        # pour H/U (LTB), le dénominateur reste Mb,Rd (déjà en γM1), inchangé.
+        M_y_denom_CX = M_Rd_y_CX if has_Mb_CX else M_Rd_y_CX * gM_ratio
+        ratio_CX = _ratio_comb(Nb_min_CX, ky_CX, M_y_denom_CX, DV)
     else:
         ratio_CX = _ratio_comb(Nb_min_CX, kzy, M_Rd_y_CX, kzz)
 
