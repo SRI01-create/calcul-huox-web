@@ -68,7 +68,7 @@ def lambda0_flexural(
     is_stainless  : True pour acier inoxydable
     section_type  : "H" | "U" | "O" | "X"  (SectionType.value)
     CO            : configuration LTB/fabrication — "L" (laminé), "S" (soudé),
-                    "F" (variante inox U)
+                    "F" (formé à froid, inox U et H)
 
     Retour
     ------
@@ -76,16 +76,26 @@ def lambda0_flexural(
 
     Règles (extraites des formules Excel colonnes CE et CH/CI)
     ----------------------------------------------------------
-    H, X → 0.2  (formule Excel carbone ; applicable si inox aussi)
+    H    → 0.4 si (inox ET CO = "F"), sinon 0.2   (aligné sur U, cf. note)
+    X    → 0.2  (formule Excel carbone ; applicable si inox aussi)
     O    → 0.4 si inox, sinon 0.2
     U    → 0.4 si (inox ET CO = "F"), sinon 0.2
+
+    Correction du 19/08/2026 (Sem) : la feuille Excel H codait 0.2 en dur,
+    sans le test IF(AND(DX="inox",CO="F"),0.4,0.2) présent sur la feuille U
+    — confirmé erreur de construction Excel (incohérence entre feuilles
+    pour un même phénomène physique), pas un choix d'ingénieur. Le code
+    s'aligne désormais sur U plutôt que de reproduire l'omission d'Excel.
+    Non vérifiable numériquement (RCConfig.fabrication n'autorise pas
+    encore "F" côté API — cf. FabricationType, models.py — donc aucune
+    ligne réelle CO="F" + inox + H n'existe dans les classeurs de test).
     """
     if not is_stainless:
         return 0.2
     # inox
     if section_type == "O":
         return 0.4
-    if section_type == "U" and CO == "F":
+    if section_type in ("U", "H") and CO == "F":
         return 0.4
     return 0.2
 
