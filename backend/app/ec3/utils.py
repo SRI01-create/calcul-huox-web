@@ -63,7 +63,13 @@ def epsilon(fy: float, E: float, is_stainless: bool) -> float:
     Formules
     --------
     Carbone  : ε = √(235 / fy)                              [Table 5.2]
-    Inox     : ε = √(235 × E_réf_carbone / (fy × E))       [EN 1993-1-4 §5.1]
+    Inox     : ε = √((235 / fy) × (E / E_réf_carbone))      [EN 1993-1-4 §5.1]
+
+    Bug trouvé et corrigé le 18/08/2026 (vérification bit-à-bit contre un
+    classeur de nouveaux cas test) : le ratio E/E_réf était inversé
+    (E_réf/E au lieu de E/E_réf) — sans incidence sur la classe de section
+    dans les ~1400 lignes inox H/U/O testées (aucune n'était assez proche
+    d'un seuil de classe pour basculer), mais formule normativement fausse.
     """
     if fy <= 0:
         raise ValueError(f"fy doit être > 0, reçu : {fy}")
@@ -71,7 +77,7 @@ def epsilon(fy: float, E: float, is_stainless: bool) -> float:
         raise ValueError(f"E doit être > 0, reçu : {E}")
 
     if is_stainless:
-        return math.sqrt(235.0 * _E_REF_CARBON / (fy * E))
+        return math.sqrt(235.0 * E / (fy * _E_REF_CARBON))
     else:
         return math.sqrt(235.0 / fy)
 
