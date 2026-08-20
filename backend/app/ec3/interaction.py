@@ -19,7 +19,9 @@ Colonnes Excel de référence (formules identiques H/U/O/X sauf gardes)
     DI   C_yy          MAX(1+(wy−1)·((...·DC−DE),  1/wy)
     DJ   C_yz          MAX(1+(wz−1)·(...·DC−DF),  0.6·(wz/wy)^0.5/wy)
     DK   C_zy          MAX(1+(wy−1)·(...·DC−DG),  0.6·(wy/wz)^0.5/wy)
-    DL   C_zz          MAX(1+(wz−1)·(...·DC−DH),  1/wy)  [borne =AD/AE]
+    DL   C_zz          MAX(1+(wz−1)·(...·DC−DH),  1/wz)  [corrigé 20/08/2026,
+                        Excel utilise AD/AE (1/wy) pour DL — erreur Excel
+                        confirmée par Sem, code s'en écarte volontairement]
     CY   kyy (carbone) Cmy·CmLT·DO/(1−NEd/Ncr_min)/C_yy   (cl.1/2)
     CZ   kyz (carbone) Cmz·DO/(1−NEd/Ncr_min)·(1/C_yz)·0.6·(wz/wy)^0.5  (cl.1/2)
     DA   kzy (carbone) Cmy·CmLT·DP/(1−NEd/Ncr_min)·(1/C_zy)·0.6·(wy/wz)^0.5 (cl.1/2)
@@ -183,10 +185,10 @@ def _C_zy(wy: float, wz: float, Cmy: float, lam: float, nEd: float, DG: float, i
     return max(1.0 + (wy - 1.0) * bracket, lower)
 
 
-def _C_zz(wz: float, Cmz: float, lam: float, nEd: float, DH: float, inv_wy: float) -> float:
-    """DL = MAX(1+(wz−1)·((2−1.6·Cmz²·λ̄/wz−1.6·Cmz²·λ̄²/wz)·nEd − DH), 1/wy)"""
+def _C_zz(wz: float, Cmz: float, lam: float, nEd: float, DH: float, inv_wz: float) -> float:
+    """DL = MAX(1+(wz−1)·((2−1.6·Cmz²·λ̄/wz−1.6·Cmz²·λ̄²/wz)·nEd − DH), 1/wz)"""
     bracket = (2.0 - 1.6*Cmz**2*lam/wz - 1.6*Cmz**2*lam**2/wz) * nEd - DH
-    return max(1.0 + (wz - 1.0) * bracket, inv_wy)
+    return max(1.0 + (wz - 1.0) * bracket, inv_wz)
 
 
 # ─── Fonction principale ──────────────────────────────────────────────────────
@@ -298,7 +300,15 @@ def interaction_factors(
     # ── DM, DN ────────────────────────────────────────────────────────────
     DM = min(Wpl_y / Wel_y, 1.5) if Wel_y > 0 else 1.0
     DN = min(Wpl_z / Wel_z, 1.5) if Wel_z > 0 else 1.0
-    inv_wy = Wel_y / Wpl_y   # = 1/DM, borne inférieure de DI et DL
+    inv_wy = Wel_y / Wpl_y   # = 1/DM, borne inférieure de DI
+    inv_wz = Wel_z / Wpl_z   # = 1/DN, borne inférieure de DL — corrigé le 20/08/2026
+    # (Sem) : Czz doit être borné par Wel_z/Wpl_z, pas par Wel_y/Wpl_y comme
+    # Cyy. Le classeur Excel utilisait AD/AE (Wel_y/Wpl_y) pour DL aussi
+    # (vérifié bit-à-bit, déjà 100% conforme à Excel) — mais c'est une
+    # erreur de construction Excel, pas un choix normatif : chaque facteur
+    # "pur axe" (Cyy, Czz) doit être borné par le rapport Wel/Wpl de son
+    # propre axe. Cyz/Czy (bornes croisées mêlant wy et wz) restent
+    # inchangés — non concernés par cette correction.
 
     # ── DO, DP — facteurs ε (amplification) ─────────────────────────────
     # χ_y = Nb,Rd,y × γM1 / (A × fy),  idem χ_z
@@ -336,7 +346,7 @@ def interaction_factors(
     DI = _C_yy(DM, Cmy, lam, DC, DE, inv_wy)
     DJ = _C_yz(DN, DM, Cmz, lam, DC, DF, inv_wy)
     DK = _C_zy(DM, DN, Cmy, lam, DC, DG, inv_wy)
-    DL = _C_zz(DN, Cmz, lam, DC, DH, inv_wy)
+    DL = _C_zz(DN, Cmz, lam, DC, DH, inv_wz)
 
     # ── Dénominateur commun (1−NEd/Ncr_min) ──────────────────────────
     denom_k = 1.0 - NEd_c / Ncr_min if Ncr_min > 0 else 1.0
