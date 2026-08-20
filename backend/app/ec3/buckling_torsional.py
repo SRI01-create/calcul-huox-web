@@ -51,7 +51,11 @@ Paramètre α_TF de la courbe de flambement (CJ)
 ───────────────────────────────────────────────
     if inox  → α = 0.34   (courbe 'b', fixe, extrait de la formule CJ)
     if carbone → α = α(curve_z)   (même courbe que flambement z)
-    λ₀ = 0.2 dans les deux cas (hardcodé dans la formule CJ de la feuille U)
+    λ₀ = même règle que le flambement par flexion (lambda0_flexural) :
+         0.4 si (inox ET CO="F"), sinon 0.2. Le classeur Excel hardcode 0.2
+         pour CJ quel que soit le matériau — confirmé erreur de construction
+         Excel (20/08/2026, Sem) : le code s'en écarte volontairement pour
+         appliquer la même règle que CH/CI.
 
 Références normatives
 ─────────────────────
@@ -174,11 +178,12 @@ def Nb_Rd_torsional(
     lambda_bar_TF: float,
     curve_z: str,
     is_stainless: bool,
+    CO: str = "L",
 ) -> float:
     """
     Résistance de calcul au flambement flexion-torsion  Nb,Rd,TF  (N).
 
-        χ_TF  = chi_reduction(λ̄_TF, α_TF, λ₀=0.2)
+        χ_TF  = chi_reduction(λ̄_TF, α_TF, λ₀)
         Nb,Rd,TF = χ_TF × A × fy / γM1
 
     Paramètres
@@ -190,6 +195,7 @@ def Nb_Rd_torsional(
     curve_z         : courbe de flambement axe z (utilisée pour carbone)
     is_stainless    : True → α_TF = 0.34 (courbe b, fixe per formule Excel)
                       False → α_TF = α(curve_z)
+    CO              : "L" | "S" | "F" — détermine λ₀ (voir note)
 
     Retour
     ------
@@ -197,11 +203,20 @@ def Nb_Rd_torsional(
 
     Correspondance Excel (feuille U, col CJ)
     ────────────────────────────────────────
-    α = IF(DX="inox", 0.34, α(BW))
-    λ₀ = 0.2  (hardcodé, contrairement aux cols CH/CI qui utilisent IF(inox,0.4,0.2))
+    α  = IF(DX="inox", 0.34, α(BW))
+    λ₀ = 0.2  (hardcodé dans le classeur Excel, quel que soit le matériau)
+
+    Correction du 20/08/2026 (Sem) : le flambement flexion-torsion doit
+    suivre la même règle de λ₀ que le flambement par flexion (CH/CI,
+    cf. lambda0_flexural) — 0.4 si (inox ET CO="F"), sinon 0.2 — plutôt que
+    le 0.2 fixe du classeur Excel, confirmé erreur de construction Excel
+    (le classeur n'a pas propagé la même distinction que CH/CI à CJ). Non
+    vérifiable numériquement (aucune ligne réelle CO="F" dans les classeurs
+    de test — même limitation que pour le correctif H de lambda0_flexural).
     """
+    lam0  = lambda0_flexural(is_stainless, "U", CO)
     alpha = 0.34 if is_stainless else buckling_curve_alpha(curve_z)
-    chi   = chi_reduction(lambda_bar_TF, alpha, lambda_0=0.2)
+    chi   = chi_reduction(lambda_bar_TF, alpha, lambda_0=lam0)
     fy_Pa = fy * 1_000_000.0
     return chi * A * fy_Pa / gamma_M1
 
@@ -339,7 +354,7 @@ def torsional_buckling(
         Nb_TF = None
         r_TF  = None
     else:
-        Nb_TF = Nb_Rd_torsional(A, fy, gamma_M1, lam_TF, curve_z, is_stainless)
+        Nb_TF = Nb_Rd_torsional(A, fy, gamma_M1, lam_TF, curve_z, is_stainless, CO)
         r_TF  = 0.0 if NEd_c == 0.0 else NEd_c / Nb_TF         # CL
 
     return {
@@ -353,4 +368,3 @@ def torsional_buckling(
         "lambda_bar_max":   lam_max,
         "buckling_ignored": ignored,
 }
-    
