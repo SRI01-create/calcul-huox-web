@@ -68,6 +68,7 @@ from ..ec3.section_combined import (
     MV_Rd, My_N_Rd_HU, Mz_N_Rd_HU, ratio_combined_H,
 )
 from ..ec3.buckling_flexural import flexural_buckling
+from .common import ratio_N_combined, ratio_Nb_flexural
 from ..ec3.ltb_mcr import compute_Mcr
 from ..ec3.ltb_resistance import ltb_resistance
 from ..ec3.interaction import interaction_factors
@@ -220,10 +221,7 @@ def _check_row(
     my_c  = pre["my_c"];  mz_c  = pre["mz_c"]
     vy_pl = pre["vy_pl"]; vz_pl = pre["vz_pl"]
 
-    ratio_N  = max(
-        (NEd_t / nt_rd if nt_rd else 0.0),
-        (NEd_c / nc_rd if nc_rd else 0.0),
-    )
+    ratio_N  = ratio_N_combined(NEd_t, NEd_c, nt_rd, nc_rd)
     ratio_cy = abs(My) / my_c if my_c else None
     ratio_cz = abs(Mz) / mz_c if mz_c else None
     ratio_vy = abs(Vy) / vy_pl if vy_pl else None
@@ -254,14 +252,7 @@ def _check_row(
 
     # ── Phase 10 : flambement par flexion ─────────────────────────────────
     Nb_y = pre["Nb_Rd_y"]; Nb_z = pre["Nb_Rd_z"]
-    if NEd_c == 0.0 or (Nb_y is None and Nb_z is None):
-        ratio_Nb_F = 0.0
-    elif Nb_y is not None and Nb_z is not None:
-        ratio_Nb_F = NEd_c / min(Nb_y, Nb_z)
-    elif Nb_y is not None:
-        ratio_Nb_F = NEd_c / Nb_y
-    else:
-        ratio_Nb_F = None
+    ratio_Nb_F = ratio_Nb_flexural(NEd_c, Nb_y, Nb_z)
 
     # ── Phase 13 : déversement (ratio par ligne, Mb,Rd déjà pré-calculé) ──
     # Excel arrondit toujours au centième supérieur : CV = ABS(ROUNDUP(My/Mb,Rd, 2))
