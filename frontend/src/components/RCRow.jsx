@@ -1,7 +1,7 @@
 // Phase 20 — Carte de configuration d'un RC (Regroupement de Calcul).
 //
 // Champs édités (cf. backend/app/models.py — RCConfig) :
-//   section_type, designation, material_number,
+//   section_type, designation, material_number, manual_section_class (Phase 27),
 //   L, cry, crz, buckling_curve_y, buckling_curve_z,
 //   crT (H/U), Lm, ltb_config, fabrication, zG (H/U),
 //   PTC, A_trou, Af_trou, kr
@@ -10,7 +10,7 @@
 
 import React, { useEffect, useRef, useState } from 'react'
 import { useStore } from '../store'
-import { fetchSections, fetchSectionProperties } from '../api'
+import { fetchSections, fetchSectionProperties, fetchSectionClassification } from '../api'
 
 // ─── Référentiels d'options ───────────────────────────────────────────────────
 
@@ -190,6 +190,74 @@ function SectionPicker({ sectionType, designation, onChange }) {
   )
 }
 
+// ─── Classe de section (auto-calculée + forçage manuel — Phase 27) ───────────
+//
+// La classe (1 à 4) est déterminée de façon conservative (compression pure,
+// Table 5.2 EC3) à partir de la section, du matériau et de la fabrication
+// uniquement — indépendante des efforts. Elle est donc calculable et
+// modifiable dès cette étape, avant tout upload de fichiers.
+//
+// L'utilisateur peut la forcer sans aucune restriction (outil destiné à des
+// ingénieurs responsables de leurs calculs) ; un warning informatif apparaît
+// dans les résultats si la classe forcée diffère de l'auto-calcul.
+
+const MANUAL_CLASS_OPTIONS = [
+  { value: '', label: 'Auto' },
+  { value: '1', label: '1' },
+  { value: '2', label: '2' },
+  { value: '3', label: '3' },
+  { value: '4', label: '4' },
+]
+
+function ClassificationControl({
+  sectionType, designation, fy, E, steelType, fabrication,
+  manualClass, onManualClassChange,
+}) {
+  const [autoClass, setAutoClass] = useState(null)
+
+  useEffect(() => {
+    if (!designation || !fy || !E || !steelType) {
+      setAutoClass(null)
+      return
+    }
+    let cancelled = false
+    fetchSectionClassification(sectionType, designation, { fy, E, steelType, fabrication })
+      .then((data) => { if (!cancelled) setAutoClass(data.section_class) })
+      .catch(() => { if (!cancelled) setAutoClass(null) })
+    return () => { cancelled = true }
+  }, [sectionType, designation, fy, E, steelType, fabrication])
+
+  const isForced = !!manualClass && manualClass !== autoClass
+
+  return (
+    <div className="flex flex-col text-sm">
+      <span className="text-gray-600 mb-1">Classe de section</span>
+      <div className="flex items-center gap-2">
+        <select
+          className="border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-slate-400"
+          value={manualClass ?? ''}
+          onChange={(e) => onManualClassChange(e.target.value === '' ? null : e.target.value)}
+          title="Forcer la classe de section (aucune restriction — sous la responsabilité de l'ingénieur)"
+        >
+          {MANUAL_CLASS_OPTIONS.map((o) => (
+            <option key={o.value || 'auto'} value={o.value}>{o.label}</option>
+          ))}
+        </select>
+        {isForced ? (
+          <span
+            className="text-xs px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 font-medium whitespace-nowrap"
+            title={`Classe auto-calculée (conservative) : ${autoClass ?? '?'}`}
+          >
+            Forcée (auto : {autoClass ?? '?'})
+          </span>
+        ) : (
+          autoClass && <span className="text-xs text-gray-400 whitespace-nowrap">Auto : {autoClass}</span>
+        )}
+      </div>
+    </div>
+  )
+}
+
 // ─── Section repliable ─────────────────────────────────────────────────────────
 
 function Group({ title, children }) {
@@ -215,6 +283,7 @@ export default function RCRow({ rc }) {
 
   const num = rc.rc_number
   const set = (patch) => updateRC(num, patch)
+  const material = materials.find((m) => m.material_number === rc.material_number)
 
   const isHU = rc.section_type === 'H' || rc.section_type === 'U'
   const isU = rc.section_type === 'U'
@@ -259,6 +328,19 @@ export default function RCRow({ rc }) {
               value: m.material_number,
               label: `${m.designation} (n°${m.material_number})`,
             }))}
+          />
+        </div>
+
+        <div className="w-40 shrink-0">
+          <ClassificationControl
+            sectionType={rc.section_type}
+            designation={rc.designation}
+            fy={material?.fy}
+            E={material?.E}
+            steelType={material?.steel_type}
+            fabrication={rc.fabrication}
+            manualClass={rc.manual_section_class}
+            onManualClassChange={(v) => set({ manual_section_class: v })}
           />
         </div>
 
