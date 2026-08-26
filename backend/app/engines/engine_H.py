@@ -105,7 +105,13 @@ def precompute(rc: RCConfig, mat: MaterialConfig) -> dict:
     Av_y  = sec["Av_y"];  Av_z  = sec["Av_z"]
 
     # ── Classification (compression pure — conservatoire) ─────────────────
-    classe = section_class_H(h, b, tw, tf, r, d, eps, is_ss, fab)
+    classe_auto = section_class_H(h, b, tw, tf, r, d, eps, is_ss, fab)
+    # Classe manuelle (Phase 27) : remplace la classe auto-calculée si
+    # renseignée par l'utilisateur. Aucune restriction n'est appliquée —
+    # outil destiné à des ingénieurs responsables de leurs calculs. L'écart
+    # éventuel entre classe_auto et classe est signalé via un warning non
+    # bloquant (results.build_warnings), jamais bloqué ici.
+    classe = int(rc.manual_section_class) if rc.manual_section_class else classe_auto
 
     # ── Voilement cisaillement ────────────────────────────────────────────
     shear_ok = can_ignore_shear_buckling(h, tf, tw, eps, is_ss, is_angle=False)
@@ -161,7 +167,7 @@ def precompute(rc: RCConfig, mat: MaterialConfig) -> dict:
 
     return {
         # Section
-        "sec": sec, "classe": classe, "shear_ok": shear_ok,
+        "sec": sec, "classe": classe, "classe_auto": classe_auto, "shear_ok": shear_ok,
         "is_welded": sec["is_welded"], "epsilon": eps,
         "h": h, "b": b, "tw": tw, "tf": tf, "t": None,
         "A": A, "Iy": Iy, "Iz": Iz, "It": It, "IW": IW, "Sw": Sw,
