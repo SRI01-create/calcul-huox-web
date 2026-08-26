@@ -9,6 +9,8 @@ Endpoints
     GET  /health                          → vérification de disponibilité
     GET  /api/sections/{cat_type}         → liste des désignations du catalogue
     GET  /api/sections/{cat_type}/{designation} → propriétés d'une section
+    GET  /api/classification/{cat_type}/{designation} → classe de section
+                                             auto-calculée (Phase 27)
     POST /api/calculate                   → calcul complet EC3 (Format 1 + 2)
 
 POST /api/calculate — contrat multipart/form-data
@@ -48,7 +50,11 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import ValidationError
 
 from .catalogue import VALID_TYPES, get_section, list_sections, preload_all
-from .models import CalculationRequest, CalculationResponse
+from .ec3.classification import (
+    section_class_H, section_class_U, section_class_O, section_class_X,
+)
+from .ec3.utils import epsilon
+from .models import CalculationRequest, CalculationResponse, FabricationType, SteelType
 from .parsers import build_all_lc, parse_ele_file, parse_lc_file, split_axial
 from .results import build_response
 
@@ -138,6 +144,68 @@ def get_section_properties(cat_type: str, designation: str):
         return get_section(cat_type, designation)
     except KeyError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+
+@app.get("/api/classification/{cat_type}/{designation}", tags=["sections"])
+def get_section_classification(
+    cat_type: str,
+    designation: str,
+    fy: float,
+    E: float,
+    steel_type: SteelType = SteelType.CARBON,
+    fabrication: FabricationType = FabricationType.LAMINATED,
+):
+    """
+    Classe de section (1 à 4) déterminée de façon conservative (compression
+    pure, Table 5.2), à partir de la géométrie catalogue et des paramètres
+    matériau/fabrication fournis. Aucun effort interne n'entre en jeu — la
+    classe ne dépend que de la section, du matériau et de la fabrication.
+
+    Phase 27 : utilisé par le frontend pour afficher la classe auto-calculée
+    dès l'étape "1 — Configuration RC & Matériaux" (avant tout upload de
+    fichiers), en amont du calcul complet — permet à l'utilisateur de décider
+    s'il souhaite la forcer via RCConfig.manual_section_class.
+
+    Paramètres
+    ----------
+    fy, E       : caractéristiques du matériau référencé par le RC (MPa)
+    steel_type  : "carbone" | "inox"
+    fabrication : "L" (laminé/formé à froid) | "S" (PRS soudé)
+
+    Retour
+    ------
+    {"cat_type": ..., "designation": ..., "section_class": "1"|"2"|"3"|"4"}
+    """
+    cat_type = cat_type.upper()
+    if cat_type not in VALID_TYPES:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Type de catalogue invalide : '{cat_type}'. Valeurs : {VALID_TYPES}",
+        )
+    try:
+        sec = get_section(cat_type, designation)
+    except KeyError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+    is_ss = (steel_type == SteelType.STAINLESS)
+    eps = epsilon(fy, E, is_ss)
+    fab = fabrication.value if isinstance(fabrication, FabricationType) else fabrication
+
+    if cat_type == "H":
+        classe = section_class_H(
+            sec["h"], sec["b"], sec["tw"], sec["tf"], sec["r"], sec["d"], eps, is_ss, fab
+        )
+    elif cat_type == "U":
+        classe = section_class_U(
+            sec["h"], sec["b"], sec["tw"], sec["tf"], sec["r"], sec["d"],
+            designation, eps, is_ss, fab,
+        )
+    elif cat_type == "O":
+        classe = section_class_O(sec["h"], sec["b"], sec["t"], designation, eps, is_ss)
+    else:  # "X"
+        classe = section_class_X()
+
+    return {"cat_type": cat_type, "designation": designation, "section_class": str(classe)}
 
 
 # --- Calcul EC3 ---------------------------------------------------------------
