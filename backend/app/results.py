@@ -100,7 +100,8 @@ def build_rc_summary(
         rc_number     = rc.rc_number,
         section_type  = rc.section_type,
         designation   = rc.designation,
-        section_class = str(pre["classe"]),
+        section_class      = str(pre["classe"]),
+        section_class_auto = str(pre["classe_auto"]),
         is_welded     = pre["is_welded"],
 
         # ── Géométrie ────────────────────────────────────────────────────
@@ -194,6 +195,9 @@ def build_warnings(format1: list[RCSummary]) -> list[str]:
 
     Avertissements générés
     -----------------------
+    - Classe de section forcée manuellement (Phase 27) : diffère de la classe
+      auto-calculée de façon conservative — informatif uniquement, aucune
+      restriction n'est appliquée (responsabilité de l'ingénieur).
     - Section de classe 4 : résistances de section hors méthode EC3 simplifiée
       de l'outil (Nt,Rd, Nc,Rd, Mc,Rd, Nb,Rd, Mb,Rd = None pour ce RC).
     - Voilement par cisaillement non négligeable (h/tw > limite §6.2.6(6)) :
@@ -201,6 +205,13 @@ def build_warnings(format1: list[RCSummary]) -> list[str]:
     """
     warnings: list[str] = []
     for s in format1:
+        if s.section_class != s.section_class_auto:
+            warnings.append(
+                f"RC {s.rc_number} ({s.designation}) : classe de section "
+                f"forcée manuellement à {s.section_class} (classe "
+                f"auto-calculée, conservative : {s.section_class_auto}) — "
+                f"vérifier la pertinence de ce choix."
+            )
         if s.section_class == "4":
             warnings.append(
                 f"RC {s.rc_number} ({s.designation}) : section de classe 4 — "
