@@ -63,7 +63,9 @@ def precompute(rc: RCConfig, mat: MaterialConfig) -> dict:
     Av_y  = sec["Av_y"];  Av_z  = sec["Av_z"]
 
     # ── Classification ───────────────────────────────────────────────────
-    classe = section_class_O(h, b, t, rc.designation, eps, is_ss)
+    classe_auto = section_class_O(h, b, t, rc.designation, eps, is_ss)
+    # Classe manuelle (Phase 27) — voir engine_H.precompute() pour le détail.
+    classe = int(rc.manual_section_class) if rc.manual_section_class else classe_auto
 
     # ── Aires nettes (rare pour O, mais géré pour cohérence) ───────────────
     if rc.PTC != "P" and rc.A_trou:
@@ -96,7 +98,7 @@ def precompute(rc: RCConfig, mat: MaterialConfig) -> dict:
     )
 
     return {
-        "sec": sec, "classe": classe, "is_circular": is_circular,
+        "sec": sec, "classe": classe, "classe_auto": classe_auto, "is_circular": is_circular,
         "is_welded": sec["is_welded"], "epsilon": eps,
         "h": h, "b": b, "t": t, "tw": None, "tf": None,
         "A": A, "Iy": Iy, "Iz": Iz, "It": It,
