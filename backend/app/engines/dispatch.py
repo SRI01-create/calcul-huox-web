@@ -44,7 +44,7 @@ def precompute_rc(rc: RCConfig, material: MaterialConfig) -> dict:
     Retour
     ------
     dict — voir la docstring de precompute() dans chaque engine_*.py.
-    Clés communes aux 4 moteurs : sec, classe, is_welded, epsilon,
+    Clés communes aux 4 moteurs : sec, classe, classe_auto, is_welded, epsilon,
     h, b, tw, tf, t, A, fy, E, G, is_ss, gM0, gM1, gM2,
     nt_rd, nc_rd, my_c, mz_c, vy_pl, vz_pl,
     Ncr_min, Nb_Rd_y, Nb_Rd_z, lambda_bar_y, lambda_bar_z, lambda_bar_max,
