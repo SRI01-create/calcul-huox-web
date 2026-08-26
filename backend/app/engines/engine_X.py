@@ -60,7 +60,10 @@ def precompute(rc: RCConfig, mat: MaterialConfig) -> dict:
     Av_y  = sec["Av_y"];  Av_z  = sec["Av_z"]
 
     # ── Classification — toujours 1 ────────────────────────────────────────
-    classe = section_class_X()
+    classe_auto = section_class_X()
+    # Classe manuelle (Phase 27) — voir engine_H.precompute() pour le détail.
+    # S'applique aussi à X (toujours classe 1 en auto) par cohérence.
+    classe = int(rc.manual_section_class) if rc.manual_section_class else classe_auto
 
     # ── Résistances pures (Phase 7) — pas de trous pour sections pleines ──
     nt_rd = Nt_Rd(classe, A, A, fy, mat.fu, gM0, gM2, "P", rc.kr)
@@ -84,7 +87,7 @@ def precompute(rc: RCConfig, mat: MaterialConfig) -> dict:
     )
 
     return {
-        "sec": sec, "classe": classe, "is_circular": is_circular,
+        "sec": sec, "classe": classe, "classe_auto": classe_auto, "is_circular": is_circular,
         "is_welded": sec["is_welded"], "epsilon": eps,
         "h": h, "b": b, "t": None, "tw": None, "tf": None,
         "A": A, "Iy": Iy, "Iz": Iz, "It": It,
