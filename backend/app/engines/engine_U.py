@@ -80,7 +80,9 @@ def precompute(rc: RCConfig, mat: MaterialConfig) -> dict:
     tf_eff = tf if tf is not None else tw
 
     # ── Classification ───────────────────────────────────────────────────
-    classe = section_class_U(h, b, tw, tf, r, d, rc.designation, eps, is_ss, fab)
+    classe_auto = section_class_U(h, b, tw, tf, r, d, rc.designation, eps, is_ss, fab)
+    # Classe manuelle (Phase 27) — voir engine_H.precompute() pour le détail.
+    classe = int(rc.manual_section_class) if rc.manual_section_class else classe_auto
 
     # ── Voilement cisaillement ────────────────────────────────────────────
     shear_ok = can_ignore_shear_buckling(h, tf_eff, tw, eps, is_ss, is_angle)
@@ -115,7 +117,8 @@ def precompute(rc: RCConfig, mat: MaterialConfig) -> dict:
     )
 
     return {
-        "sec": sec, "classe": classe, "shear_ok": shear_ok, "is_angle": is_angle,
+        "sec": sec, "classe": classe, "classe_auto": classe_auto,
+        "shear_ok": shear_ok, "is_angle": is_angle,
         "is_welded": sec["is_welded"], "epsilon": eps,
         "h": h, "b": b, "tw": tw, "tf": tf_eff, "t": None,
         "A": A, "Iy": Iy, "Iz": Iz, "It": It, "IW": IW, "Sw_w": Sw_w,
