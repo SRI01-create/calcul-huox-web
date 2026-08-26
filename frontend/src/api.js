@@ -4,6 +4,8 @@
 // ───────────────────────────────────────────────────────────
 //   GET  /api/sections/{catType}?query=...   → liste des désignations
 //   GET  /api/sections/{catType}/{designation} → propriétés d'une section
+//   GET  /api/classification/{catType}/{designation} → classe de section
+//                                               auto-calculée (Phase 27)
 //   POST /api/calculate (multipart/form-data) → CalculationResponse
 //
 // Configuration de l'URL de base
@@ -46,6 +48,25 @@ export async function fetchSections(catType, query = '') {
 export async function fetchSectionProperties(catType, designation) {
   const { data } = await apiClient.get(
     `/sections/${catType}/${encodeURIComponent(designation)}`
+  )
+  return data
+}
+
+/**
+ * Récupère la classe de section (1 à 4) auto-calculée de façon conservative
+ * (compression pure, Table 5.2), pour une section + un matériau + une
+ * fabrication donnés. Ne dépend d'aucun effort interne — appelable dès
+ * l'étape de configuration RC, avant tout upload de fichiers (Phase 27).
+ *
+ * @param {'H'|'U'|'O'|'X'} catType
+ * @param {string} designation
+ * @param {{fy: number, E: number, steelType: 'carbone'|'inox', fabrication: 'L'|'S'}} material
+ * @returns {Promise<{cat_type: string, designation: string, section_class: string}>}
+ */
+export async function fetchSectionClassification(catType, designation, { fy, E, steelType, fabrication }) {
+  const { data } = await apiClient.get(
+    `/classification/${catType}/${encodeURIComponent(designation)}`,
+    { params: { fy, E, steel_type: steelType, fabrication } }
   )
   return data
 }
