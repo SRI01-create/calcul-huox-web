@@ -57,6 +57,7 @@ export function createDefaultRC(rcNumber, materialNumber) {
     section_type: 'H', // 'H' | 'U' | 'O' | 'X'
     designation: '',
     material_number: materialNumber,
+    manual_section_class: null, // '1'|'2'|'3'|'4' si forcée par l'utilisateur, sinon null (auto)
 
     // Flambement par flexion
     L: 1.0,
