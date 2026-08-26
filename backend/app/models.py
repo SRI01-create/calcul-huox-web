@@ -39,7 +39,7 @@ Unités des paramètres matériau
 from __future__ import annotations
 
 from enum import Enum
-from typing import Optional
+from typing import Literal, Optional
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
@@ -96,6 +96,16 @@ class RCConfig(BaseModel):
     section_type:   SectionType = Field(..., description="Type de section : H | U | O | X")
     designation:    str         = Field(..., min_length=1, description="Désignation exacte du catalogue")
     material_number: int        = Field(..., ge=1, description="Référence vers MaterialConfig.material_number")
+    manual_section_class: Optional[Literal["1", "2", "3", "4"]] = Field(
+        None,
+        description=(
+            "Classe de section imposée par l'utilisateur (1 à 4), en remplacement "
+            "de la classe auto-calculée de façon conservative. Aucune restriction "
+            "n'est appliquée (outil destiné à des ingénieurs responsables de leurs "
+            "calculs) ; un warning informatif est ajouté à la réponse si la classe "
+            "forcée diffère de la classe auto-calculée. None = pas de classe forcée."
+        ),
+    )
 
     # ── Flambement par flexion ───────────────────────────────────────────────
     L:   float = Field(..., gt=0, description="Longueur de barre (m)")
@@ -274,6 +284,8 @@ class RCSummary(BaseModel):
     section_type: str
     designation:  str
     section_class: str
+    section_class_auto: str  # classe auto-calculée (conservative) — identique à
+                              # section_class sauf si manual_section_class est renseigné
     is_welded:    bool
 
     # ── Propriétés géométriques principales ──────────────────────────────
