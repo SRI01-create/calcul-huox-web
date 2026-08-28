@@ -51,7 +51,7 @@ export default function RCForm() {
 
       <div className="space-y-3">
         {rcConfigs.map((rc) => (
-          <RCRow key={rc.rc_number} rc={rc} />
+          <RCRow key={rc._uid} rc={rc} />
         ))}
       </div>
     </section>
