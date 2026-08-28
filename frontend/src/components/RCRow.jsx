@@ -273,6 +273,30 @@ function Group({ title, children }) {
   )
 }
 
+// ─── Identifiant RC (éditable — Phase 28) ─────────────────────────────────────
+//
+// Par défaut, numérotation automatique ("1", "2"…), mais librement
+// remplaçable par un identifiant texte court. Doit correspondre exactement
+// (caractère pour caractère, sans espace) au token de la 2ᵉ colonne du
+// fichier ELE — contrainte commune au format ELE et à la plupart des
+// logiciels EF (Ansys ou autre).
+
+function RCNumberField({ value, onChange }) {
+  return (
+    <label className="flex flex-col text-sm">
+      <span className="text-gray-600 mb-1">Identifiant RC</span>
+      <input
+        type="text"
+        className="w-24 border border-gray-300 rounded px-2 py-1 text-center font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-slate-400"
+        value={value}
+        maxLength={16}
+        onChange={(e) => onChange(e.target.value.replace(/\s/g, ''))}
+        title="Identifiant court (16 caractères max), sans espace — doit correspondre exactement au fichier ELE"
+      />
+    </label>
+  )
+}
+
 // ─── Carte RC ───────────────────────────────────────────────────────────────────
 
 export default function RCRow({ rc }) {
@@ -281,8 +305,7 @@ export default function RCRow({ rc }) {
   const removeRC = useStore((s) => s.removeRC)
   const [expanded, setExpanded] = useState(true)
 
-  const num = rc.rc_number
-  const set = (patch) => updateRC(num, patch)
+  const set = (patch) => updateRC(rc._uid, patch)
   const material = materials.find((m) => m.material_number === rc.material_number)
 
   const isHU = rc.section_type === 'H' || rc.section_type === 'U'
@@ -298,9 +321,7 @@ export default function RCRow({ rc }) {
     <div className="bg-white border border-gray-200 rounded-lg shadow-sm">
       {/* En-tête ------------------------------------------------------------ */}
       <div className="flex flex-wrap items-center gap-3 p-4">
-        <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-slate-700 text-white text-sm font-semibold shrink-0">
-          {num}
-        </span>
+        <RCNumberField value={rc.rc_number} onChange={(v) => set({ rc_number: v })} />
 
         <div className="w-48 shrink-0">
           <SelectField
@@ -355,7 +376,7 @@ export default function RCRow({ rc }) {
 
         <button
           type="button"
-          onClick={() => removeRC(num)}
+          onClick={() => removeRC(rc._uid)}
           className="text-gray-400 hover:text-red-600 text-lg leading-none self-end pb-1.5"
           title="Supprimer ce RC"
         >
