@@ -24,6 +24,16 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { runCalculation, getErrorMessage } from './api.js'
 
+// ─── Identifiant technique interne (React key / clé de store) ────────────────
+//
+// Jamais envoyé à l'API, jamais affiché — sert uniquement à retrouver une
+// ligne indépendamment de ses champs éditables (rc_number, material_number…).
+
+function makeUid() {
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) return crypto.randomUUID()
+  return `uid-${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`
+}
+
 // ─── Valeurs par défaut ───────────────────────────────────────────────────────
 
 /**
@@ -50,10 +60,21 @@ export function createDefaultMaterial(materialNumber) {
  * stabilisante), section pleine sans trous.
  *
  * `materialNumber` doit référencer un matériau existant dans `materials`.
+ *
+ * `rc_number` (Phase 28) est un identifiant texte libre (≤16 caractères,
+ * sans espace/tabulation — doit correspondre exactement au token de la 2ᵉ
+ * colonne du fichier ELE). Par défaut, préformaté avec la numérotation
+ * automatique ("1", "2"…) mais librement modifiable par l'utilisateur.
+ *
+ * `_uid` est un identifiant technique interne (jamais envoyé à l'API,
+ * jamais affiché) utilisé comme clé React et comme clé de recherche du
+ * store, indépendante de `rc_number` — pour que renommer un RC n'entraîne
+ * ni démontage de son composant ni collision de clé pendant la saisie.
  */
 export function createDefaultRC(rcNumber, materialNumber) {
   return {
-    rc_number: rcNumber,
+    _uid: makeUid(),
+    rc_number: String(rcNumber),
     section_type: 'H', // 'H' | 'U' | 'O' | 'X'
     designation: '',
     material_number: materialNumber,
@@ -85,7 +106,7 @@ export function createDefaultRC(rcNumber, materialNumber) {
 
 // ─── Champs numériques (pour buildPayload) ───────────────────────────────────
 
-const RC_INT_FIELDS = ['rc_number', 'material_number']
+const RC_INT_FIELDS = ['material_number']
 const RC_FLOAT_FIELDS = ['L', 'cry', 'crz', 'crT', 'Lm', 'zG', 'kr']
 const RC_NULLABLE_FLOAT_FIELDS = ['A_trou', 'Af_trou']
 
@@ -105,13 +126,17 @@ function toNumber(v) {
 
 /**
  * Normalise un RCConfig avant envoi à l'API :
- *   - rc_number / material_number → int
+ *   - rc_number : chaîne (trim) — voir RCConfig.rc_number (Phase 28)
+ *   - material_number → int
  *   - champs flottants → float
  *   - A_trou / Af_trou : '' ou null → null, sinon float
  *   - ltb_config : conservé en chaîne (trim) — accepté '1'-'6' ou Mcr numérique
+ *   - _uid : identifiant technique interne, jamais envoyé à l'API
  */
 function normalizeRC(rc) {
-  const out = { ...rc }
+  const { _uid, ...rest } = rc
+  const out = { ...rest }
+  out.rc_number = String(out.rc_number ?? '').trim()
   for (const f of RC_INT_FIELDS) out[f] = toNumber(out[f])
   for (const f of RC_FLOAT_FIELDS) out[f] = toNumber(out[f])
   for (const f of RC_NULLABLE_FLOAT_FIELDS) {
@@ -218,25 +243,26 @@ export const useStore = create(
         const { materials } = get()
         const num = get().nextRcNumber()
         const matNum = materialNumber ?? materials[0]?.material_number ?? 1
+        const rc = createDefaultRC(num, matNum)
         set((state) => ({
-          rcConfigs: [...state.rcConfigs, createDefaultRC(num, matNum)],
+          rcConfigs: [...state.rcConfigs, rc],
         }))
-        return num
+        return rc._uid
       },
 
-      /** Met à jour un ou plusieurs champs du RC `rcNumber`. */
-      updateRC: (rcNumber, patch) => {
+      /** Met à jour un ou plusieurs champs du RC identifié par `uid` (interne — cf. `_uid`). */
+      updateRC: (uid, patch) => {
         set((state) => ({
           rcConfigs: state.rcConfigs.map((rc) =>
-            rc.rc_number === rcNumber ? { ...rc, ...patch } : rc
+            rc._uid === uid ? { ...rc, ...patch } : rc
           ),
         }))
       },
 
-      /** Supprime le RC `rcNumber`. */
-      removeRC: (rcNumber) => {
+      /** Supprime le RC identifié par `uid` (interne — cf. `_uid`). */
+      removeRC: (uid) => {
         set((state) => ({
-          rcConfigs: state.rcConfigs.filter((rc) => rc.rc_number !== rcNumber),
+          rcConfigs: state.rcConfigs.filter((rc) => rc._uid !== uid),
         }))
       },
 
@@ -296,6 +322,20 @@ export const useStore = create(
 
         const matNumberSet = new Set(matNumbers)
         for (const rc of rcConfigs) {
+          const rcId = typeof rc.rc_number === 'string' ? rc.rc_number.trim() : rc.rc_number
+          if (!rcId) {
+            errors.push('RC : l\'identifiant ne peut pas être vide.')
+          } else {
+            if (/\s/.test(rcId)) {
+              errors.push(
+                `RC "${rcId}" : l'identifiant ne peut pas contenir d'espace ni de `
+                + `tabulation (contrainte du format du fichier ELE) — utiliser '-' ou '_' à la place.`
+              )
+            }
+            if (rcId.length > 16) {
+              errors.push(`RC "${rcId}" : l'identifiant dépasse 16 caractères.`)
+            }
+          }
           if (!rc.designation || rc.designation.trim() === '') {
             errors.push(`RC ${rc.rc_number} : aucune désignation de section sélectionnée.`)
           }
@@ -344,12 +384,15 @@ export const useStore = create(
        */
       exportConfig: () => {
         const { materials, rcConfigs } = get()
+        // _uid est un détail d'implémentation interne (React/store) — pas
+        // pertinent dans un fichier destiné à être relu/partagé.
+        const exportableRC = rcConfigs.map(({ _uid, ...rest }) => rest)
         return {
           app: 'calcul-huox-web',
           export_version: 1,
           exported_at: new Date().toISOString(),
           materials,
-          rc_configs: rcConfigs,
+          rc_configs: exportableRC,
         }
       },
 
@@ -382,7 +425,10 @@ export const useStore = create(
         if (!hasValidMaterials || !hasValidRC) {
           return { ok: false, error: 'Fichier invalide : structure de matériau ou de RC incorrecte.' }
         }
-        set({ materials, rcConfigs, result: null, error: null })
+        // Phase 28 : les exports antérieurs à `_uid` n'en ont pas — généré à
+        // la volée pour éviter toute collision de clé React.
+        const rcConfigsWithUid = rcConfigs.map((rc) => (rc._uid ? rc : { ...rc, _uid: makeUid() }))
+        set({ materials, rcConfigs: rcConfigsWithUid, result: null, error: null })
         return { ok: true }
       },
       // ── Calcul ─────────────────────────────────────────────────────────────
@@ -440,6 +486,16 @@ export const useStore = create(
         materials: state.materials,
         rcConfigs: state.rcConfigs,
       }),
+      // Phase 28 : les configurations enregistrées avant l'introduction de
+      // `_uid` n'en ont pas — on le génère à la volée au chargement pour
+      // éviter toute collision de clé React entre RC existants.
+      merge: (persistedState, currentState) => {
+        const merged = { ...currentState, ...persistedState }
+        merged.rcConfigs = (merged.rcConfigs || []).map((rc) => (
+          rc._uid ? rc : { ...rc, _uid: makeUid() }
+        ))
+        return merged
+      },
     }
   )
 )
