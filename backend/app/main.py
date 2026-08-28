@@ -17,7 +17,7 @@ POST /api/calculate — contrat multipart/form-data
 ───────────────────────────────────────────────────
     request   : str (Form)  — JSON CalculationRequest
                               {"rc_configs": [...], "material_configs": [...]}
-    ele_file  : File         — fichier ELE (liste éléments → numéro RC)
+    ele_file  : File         — fichier ELE (liste éléments → identifiant RC)
     lc_files  : list[File]   — un fichier par cas de charge Ansys
                               (le nom de cas de charge est dérivé du nom de
                               fichier sans extension, ex. "LC80.txt" → "LC80")
@@ -32,7 +32,7 @@ Erreurs
     500 — erreur de calcul inattendue
 
     Non bloquant (→ `warnings` dans la réponse, pas d'erreur HTTP) :
-    éléments présents dans les CdC mais absents de l'ELE, ou numéro RC
+    éléments présents dans les CdC mais absents de l'ELE, ou identifiant RC
     présent dans l'ELE mais non configuré — écartés du calcul plutôt que
     de bloquer (cas des éléments d'aide à la modélisation EF : rigides,
     connecteurs, collecteurs...).
@@ -232,7 +232,7 @@ async def calculate(
             '{"rc_configs": [...], "material_configs": [...]}'
         ),
     ),
-    ele_file: UploadFile = File(..., description="Fichier ELE (élément → numéro RC)"),
+    ele_file: UploadFile = File(..., description="Fichier ELE (élément → identifiant RC)"),
     lc_files: list[UploadFile] = File(..., description="Fichiers de cas de charge Ansys"),
 ) -> CalculationResponse:
     """
@@ -241,12 +241,12 @@ async def calculate(
     Étapes
     ------
     1. Validation du JSON `request` → CalculationRequest (rc_configs, material_configs)
-    2. Parsing du fichier ELE → mapping element_id → rc_number
+    2. Parsing du fichier ELE → mapping element_id → identifiant RC
     3. Parsing de chaque fichier LC → cas de charge individuels
     4. Consolidation ALL_LC (build_all_lc + split_axial)
     5. Jointure avec le mapping ELE → éléments des CdC absents de l'ELE
        écartés du calcul (warning, non bloquant)
-    6. Numéros RC référencés par les éléments mais non configurés dans
+    6. Identifiants RC référencés par les éléments mais non configurés dans
        rc_configs → éléments concernés écartés du calcul (warning, non
        bloquant)
     7. build_response() → Format 1 + Format 2 + métadonnées + warnings
@@ -317,10 +317,10 @@ async def calculate(
             f"{missing_ids[:10]}{'…' if len(missing_ids) > 10 else ''}"
         )
         all_lc = all_lc[all_lc["rc_number"].notna()].copy()
-    all_lc["rc_number"] = all_lc["rc_number"].astype(int)
+    all_lc["rc_number"] = all_lc["rc_number"].astype(str)
 
     # ── 6. Vérification des RC référencés ────────────────────────────────────
-    # Même logique : un numéro RC présent dans l'ELE mais non configuré
+    # Même logique : un identifiant RC présent dans l'ELE mais non configuré
     # (élément volontairement non calculé) écarte ses éléments plutôt que
     # de bloquer tout le calcul.
     configured_rcs = {rc.rc_number for rc in calc_request.rc_configs}
