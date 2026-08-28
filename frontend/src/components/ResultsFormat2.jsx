@@ -2,7 +2,8 @@
 //
 // Une ligne par combinaison (élément × CdC).
 // Données : store.result.format2 (liste de ElementLCResult),
-// déjà triée (rc_number, element_id, lc_name) par le backend.
+// déjà triée (rc_number, element_id, lc_name) par le backend — rc_number est
+// un identifiant texte libre (Phase 28) : tri alphabétique simple, pas numérique.
 //
 // Fonctionnalités :
 //   • Filtres : RC | classe de section | seuil ratio MAX
@@ -166,7 +167,7 @@ export default function ResultsFormat2() {
   // ── Options de filtre déduites des données ────────────────────────────────
 
   const rcOptions = useMemo(
-    () => [...new Set(format2.map((r) => r.rc_number))].sort((a, b) => a - b),
+    () => [...new Set(format2.map((r) => r.rc_number))].sort(),
     [format2],
   )
 
@@ -179,7 +180,7 @@ export default function ResultsFormat2() {
 
   const filtered = useMemo(() => {
     return format2.filter((row) => {
-      if (filterRC !== 'all' && row.rc_number !== parseInt(filterRC)) return false
+      if (filterRC !== 'all' && row.rc_number !== filterRC) return false
       if (filterClass !== 'all' && row.section_class !== filterClass)  return false
       if (filterMinRatio > 0 && (row.max_ratio ?? 0) < filterMinRatio) return false
       return true
