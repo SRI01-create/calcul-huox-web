@@ -274,7 +274,7 @@ export default function ResultsFormat1() {
               const nbVals = [rc.Nb_y_Rd, rc.Nb_z_Rd].filter((v) => v != null)
               const nb_min = nbVals.length > 0 ? Math.min(...nbVals) : null
 
-              const hasWarning = rc.shear_buckling_warning || rc.section_class === 4
+              const hasWarning = rc.shear_buckling_warning || rc.section_class === "4"
 
               return (
                 <tr key={rc.rc_number}
@@ -332,7 +332,7 @@ export default function ResultsFormat1() {
 
                   {/* Avertissements */}
                   <td className="px-2 py-1.5 text-center">
-                    {rc.section_class === 4 && (
+                    {rc.section_class === "4" && (
                       <span className="inline-block text-[10px] bg-red-100 text-red-700
                                        px-1 py-0.5 rounded mr-0.5"
                         title="Classe 4 — vérifications partielles uniquement">
