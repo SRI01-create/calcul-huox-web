@@ -3,7 +3,7 @@
 // Champs édités (cf. backend/app/models.py — RCConfig) :
 //   section_type, designation, material_number, manual_section_class (Phase 27),
 //   L, cry, crz, buckling_curve_y, buckling_curve_z,
-//   crT (H/U), Lm, ltb_config, fabrication, zG (H/U),
+//   crT (U uniquement — sans effet pour H), Lm, ltb_config, fabrication, zG (H/U),
 //   PTC, A_trou, Af_trou, kr
 //
 // Le rc_number n'est pas modifiable (identifiant stable côté store).
@@ -408,17 +408,11 @@ export default function RCRow({ rc }) {
               onChange={(v) => set({ buckling_curve_z: v })} options={BUCKLING_CURVES} />
           </Group>
 
-          {/* Flambement par torsion (H/U uniquement) */}
-          {isHU && (
+          {/* Flambement par torsion (U uniquement — crT sans effet pour H, cf. engine_H.py) */}
+          {isU && (
             <Group title="Flambement par torsion / flexion-torsion — §6.3.1.4">
               <NumField label="crT" value={rc.crT} step="0.05" min="0"
                 onChange={(v) => set({ crT: v })} />
-              {!isU && (
-                <div className="col-span-3 flex items-center text-xs text-gray-400">
-                  Flambement par flexion-torsion non vérifié pour les sections H
-                  (bi-symétriques) — crT requis pour la cohérence du modèle.
-                </div>
-              )}
             </Group>
           )}
 
