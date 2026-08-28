@@ -281,7 +281,7 @@ export default function ResultsFormat1() {
                   className="border-t border-gray-100 hover:bg-slate-50/70 transition-colors">
 
                   {/* Identification */}
-                  <Td cls="font-semibold text-slate-800 tabular-nums">{rc.rc_number}</Td>
+                  <Td cls="font-semibold text-slate-800">{rc.rc_number}</Td>
                   <Td cls="text-center"><TypeBadge type={rc.section_type} /></Td>
                   <Td cls="min-w-[120px]">
                     <span className="font-medium text-slate-800">{rc.designation}</span>
