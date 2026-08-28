@@ -23,7 +23,7 @@ Fonctions publiques
 Format ELE (liste des éléments)
 --------------------------------
     Token 1 : numéro d'élément (int)
-    Token 2 : numéro RC (int)
+    Token 2 : identifiant RC (texte libre, sans espace — cf. RCConfig.rc_number)
     Tokens suivants : ignorés
 
 Format LC## (cas de charge, 13 tokens minimum par ligne)
@@ -116,7 +116,7 @@ def parse_ele_file(content: str) -> pd.DataFrame:
 
     Retour
     ------
-    DataFrame colonnes : element_id (int), rc_number (int)
+    DataFrame colonnes : element_id (int), rc_number (str)
 
     Lève
     ----
@@ -125,7 +125,7 @@ def parse_ele_file(content: str) -> pd.DataFrame:
     """
     rows: list[dict] = []
 
-    for lineno, raw_line in enumerate(content.splitlines(), start=1):
+    for raw_line in content.splitlines():
         tokens = raw_line.split()
         if len(tokens) < 2:
             continue                          # ligne vide ou incomplète → ignorée
@@ -134,13 +134,11 @@ def parse_ele_file(content: str) -> pd.DataFrame:
         if elem_id is None:
             continue                          # en-tête ou commentaire → ignoré
 
-        try:
-            rc = int(tokens[1])
-        except ValueError:
-            raise ValueError(
-                f"Fichier ELE ligne {lineno} : le numéro RC '{tokens[1]}' "
-                "n'est pas un entier valide."
-            )
+        # Identifiant RC : texte libre (cf. RCConfig.rc_number). `split()`
+        # garantit déjà l'absence d'espace/tabulation dans le token — aucune
+        # conversion ni normalisation numérique n'est appliquée (comparaison
+        # texte stricte avec RCConfig.rc_number, ex. "03" ≠ "3").
+        rc = tokens[1]
 
         rows.append({"element_id": elem_id, "rc_number": rc})
 
