@@ -92,7 +92,19 @@ class RCConfig(BaseModel):
     model_config = ConfigDict(use_enum_values=True)
 
     # ── Identification ───────────────────────────────────────────────────────
-    rc_number:      int         = Field(..., ge=1, description="Numéro RC (≥ 1)")
+    rc_number: str = Field(
+        ..., min_length=1, max_length=16,
+        description=(
+            "Identifiant du RC — texte libre court (16 caractères max), sans "
+            "espace ni tabulation. Par défaut, numérotation automatique "
+            "('1', '2', '3'…) ; l'utilisateur peut le remplacer par tout "
+            "identifiant de son choix (ex. 'Poutre-1'), à condition qu'il "
+            "corresponde exactement (comparaison texte stricte, sans "
+            "normalisation numérique) au token de la 2ᵉ colonne du fichier "
+            "ELE. Contrainte de format (pas d'espace) commune au fichier ELE "
+            "et à la plupart des logiciels EF."
+        ),
+    )
     section_type:   SectionType = Field(..., description="Type de section : H | U | O | X")
     designation:    str         = Field(..., min_length=1, description="Désignation exacte du catalogue")
     material_number: int        = Field(..., ge=1, description="Référence vers MaterialConfig.material_number")
@@ -148,6 +160,21 @@ class RCConfig(BaseModel):
     )
 
     # ── Validateurs ──────────────────────────────────────────────────────────
+    @field_validator("rc_number")
+    @classmethod
+    def validate_rc_number(cls, v: str) -> str:
+        v = v.strip()
+        if not v:
+            raise ValueError("rc_number ne peut pas être vide.")
+        if any(c.isspace() for c in v):
+            raise ValueError(
+                f"rc_number '{v}' contient un espace ou une tabulation, ce "
+                "qui est incompatible avec le format du fichier ELE (jetons "
+                "séparés par des espaces) — utiliser un caractère comme '-' "
+                "ou '_' à la place."
+            )
+        return v
+
     @field_validator("ltb_config")
     @classmethod
     def validate_ltb_config(cls, v: str) -> str:
@@ -255,7 +282,7 @@ class ElementLCResult(BaseModel):
     """
     lc_name:      str
     element_id:   int
-    rc_number:    int
+    rc_number:    str
     section_type: str
     designation:  str
     section_class: str   # "1", "2", "3" ou "4" (non vérifié)
@@ -280,7 +307,7 @@ class RCSummary(BaseModel):
     Contient les propriétés de la section, les résistances calculées,
     les efforts internes maximaux et les ratios maximaux sur tous les éléments et CdC.
     """
-    rc_number:    int
+    rc_number:    str
     section_type: str
     designation:  str
     section_class: str
