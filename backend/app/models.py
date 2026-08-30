@@ -126,6 +126,46 @@ class RCConfig(BaseModel):
     buckling_curve_y: BucklingCurve = Field(BucklingCurve.B, description="Courbe de flambement axe y-y")
     buckling_curve_z: BucklingCurve = Field(BucklingCurve.C, description="Courbe de flambement axe z-z")
 
+    # ── Guide de choix des courbes de flambement (Phase 29) ──────────────────
+    # Purement indicatif : ces 4 champs n'alimentent QUE la suggestion
+    # affichée à l'utilisateur (endpoint /api/buckling-curve/...) — aucun
+    # moteur de calcul (engine_H/U/O/X.py) ne les lit jamais. Les courbes
+    # réellement utilisées restent buckling_curve_y / buckling_curve_z
+    # ci-dessus, renseignées indépendamment (à la main ou via la suggestion).
+    bc_steel_family: Optional[Literal["s235_s420", "s460", "inox"]] = Field(
+        None,
+        description=(
+            "Nuance (regroupée) utilisée par le guide de choix des courbes de "
+            "flambement — H et O uniquement. Purement indicatif."
+        ),
+    )
+    bc_u_shape: Optional[Literal["profile", "corniere"]] = Field(
+        None,
+        description=(
+            "Forme du profil, utilisée par le guide de choix des courbes de "
+            "flambement — U uniquement. Choix explicite de l'utilisateur, "
+            "indépendant de la détection automatique de cornière (is_angle) "
+            "utilisée par ailleurs dans le calcul. Purement indicatif."
+        ),
+    )
+    bc_u_material: Optional[Literal["carbone", "inox", "inox_forme_a_froid"]] = Field(
+        None,
+        description=(
+            "Matériau utilisé par le guide de choix des courbes de flambement — "
+            "U uniquement. Purement indicatif."
+        ),
+    )
+    bc_o_shape: Optional[Literal[
+        "creuse_chaud", "creuse_froid", "caisson_soude", "caisson_soude_a_sup_05tf",
+    ]] = Field(
+        None,
+        description=(
+            "Forme de la section creuse utilisée par le guide de choix des "
+            "courbes de flambement — O uniquement, nuances carbone "
+            "(s235_s420/s460) seulement. Purement indicatif."
+        ),
+    )
+
     # ── Flambement par torsion (H et U uniquement) ───────────────────────────
     crT: float = Field(1.0, gt=0, description="Coeff. longueur flambement par torsion → Lcr,T = crT × L")
 
