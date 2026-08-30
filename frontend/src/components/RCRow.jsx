@@ -3,6 +3,7 @@
 // Champs édités (cf. backend/app/models.py — RCConfig) :
 //   section_type, designation, material_number, manual_section_class (Phase 27),
 //   L, cry, crz, buckling_curve_y, buckling_curve_z,
+//   bc_steel_family/bc_u_shape/bc_u_material/bc_o_shape (guide, Phase 29 — indicatif),
 //   crT (U uniquement — sans effet pour H), Lm, ltb_config, fabrication, zG (H/U),
 //   PTC, A_trou, Af_trou, kr
 //
@@ -10,7 +11,7 @@
 
 import React, { useEffect, useRef, useState } from 'react'
 import { useStore } from '../store'
-import { fetchSections, fetchSectionProperties, fetchSectionClassification } from '../api'
+import { fetchSections, fetchSectionProperties, fetchSectionClassification, fetchBucklingCurveSuggestion } from '../api'
 
 // ─── Référentiels d'options ───────────────────────────────────────────────────
 
@@ -28,6 +29,33 @@ const BUCKLING_CURVES = [
   { value: 'b',  label: 'b  (α = 0.34)' },
   { value: 'c',  label: 'c  (α = 0.49)' },
   { value: 'd',  label: 'd  (α = 0.76)' },
+]
+
+// Options du guide de choix des courbes de flambement (Phase 29) — purement
+// indicatives, cf. ec3/buckling_curve_guide.py côté backend pour la logique.
+const STEEL_FAMILY_OPTIONS = [
+  { value: '', label: '— choisir —' },
+  { value: 's235_s420', label: 'S235 / S275 / S355 / S420' },
+  { value: 's460', label: 'S460' },
+  { value: 'inox', label: 'Inoxydable' },
+]
+const U_SHAPE_OPTIONS = [
+  { value: '', label: '— choisir —' },
+  { value: 'profile', label: 'Profilé U' },
+  { value: 'corniere', label: 'Cornière' },
+]
+const U_MATERIAL_OPTIONS = [
+  { value: '', label: '— choisir —' },
+  { value: 'carbone', label: 'Carbone' },
+  { value: 'inox', label: 'Inoxydable' },
+  { value: 'inox_forme_a_froid', label: 'Inoxydable, formé à froid' },
+]
+const O_SHAPE_OPTIONS = [
+  { value: '', label: '— choisir —' },
+  { value: 'creuse_chaud', label: 'Section creuse finie à chaud' },
+  { value: 'creuse_froid', label: 'Section creuse finie à froid' },
+  { value: 'caisson_soude', label: 'Caisson soudé' },
+  { value: 'caisson_soude_a_sup_05tf', label: 'Caisson soudé, gorge de soudure a > 0,5×tf' },
 ]
 
 // Codes de configuration LTB extraits de l'Annexe F (table $CM$32:$CQ$37, Phase 12).
@@ -258,6 +286,149 @@ function ClassificationControl({
   )
 }
 
+// ─── Guide de choix des courbes de flambement (Phase 29) ─────────────────────
+//
+// Purement facultatif : n'écrit jamais buckling_curve_y/z sans un clic
+// explicite sur "Appliquer". L'utilisateur reste entièrement libre d'ignorer
+// ce guide et de renseigner les courbes directement, comme aujourd'hui. Les
+// choix du guide (bc_*) sont sauvegardés sur le RC (persistance/export) mais
+// ne sont jamais lus par le calcul — voir models.py.
+
+function BucklingCurveGuide({ rc, set }) {
+  const [open, setOpen] = useState(false)
+  const [suggestion, setSuggestion] = useState(null)
+  const [error, setError] = useState(null)
+
+  // Choix nécessaires et complets pour ce type de section → prêts à suggérer.
+  let ready = false
+  let choices = {}
+  if (rc.section_type === 'H') {
+    ready = !!rc.bc_steel_family
+    choices = { steelFamily: rc.bc_steel_family, fabrication: rc.fabrication }
+  } else if (rc.section_type === 'U') {
+    const needsFabrication = rc.bc_u_material === 'inox'
+    ready = !!rc.bc_u_shape && !!rc.bc_u_material && (!needsFabrication || !!rc.fabrication)
+    choices = { uShape: rc.bc_u_shape, uMaterial: rc.bc_u_material, fabrication: rc.fabrication }
+  } else if (rc.section_type === 'O') {
+    const needsShape = rc.bc_steel_family && rc.bc_steel_family !== 'inox'
+    ready = !!rc.bc_steel_family && (!needsShape || !!rc.bc_o_shape)
+    choices = { steelFamily: rc.bc_steel_family, oShape: rc.bc_o_shape }
+  } else {
+    ready = true // X : aucun choix, résultat fixe
+  }
+
+  useEffect(() => {
+    if (!open || !ready || !rc.designation) {
+      setSuggestion(null)
+      setError(null)
+      return
+    }
+    let cancelled = false
+    fetchBucklingCurveSuggestion(rc.section_type, rc.designation, choices)
+      .then((data) => {
+        if (cancelled) return
+        setSuggestion({ y: data.curve_y, z: data.curve_z })
+        setError(null)
+      })
+      .catch((err) => {
+        if (cancelled) return
+        setSuggestion(null)
+        setError(err?.response?.data?.detail || 'Suggestion indisponible.')
+      })
+    return () => { cancelled = true }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, ready, rc.designation, rc.section_type, JSON.stringify(choices)])
+
+  if (!rc.designation) return null
+
+  return (
+    <div className="col-span-2 sm:col-span-3 lg:col-span-4">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        className="text-xs text-slate-500 hover:text-slate-800 underline underline-offset-2"
+      >
+        {open ? '▾' : '▸'} Aide au choix des courbes (facultatif)
+      </button>
+
+      {open && (
+        <div className="mt-2 p-3 bg-slate-50 border border-slate-200 rounded-md flex flex-wrap items-end gap-3">
+          {rc.section_type === 'H' && (
+            <>
+              <div className="w-56">
+                <SelectField label="Nuance" value={rc.bc_steel_family || ''}
+                  onChange={(v) => set({ bc_steel_family: v || null })} options={STEEL_FAMILY_OPTIONS} />
+              </div>
+              <div className="text-xs text-gray-500 pb-2">
+                Fabrication : <span className="font-medium">{rc.fabrication === 'S' ? 'PRS (soudé)' : 'Laminé'}</span>
+                {' '}(cf. groupe « Déversement » ci-dessous)
+              </div>
+            </>
+          )}
+
+          {rc.section_type === 'U' && (
+            <>
+              <div className="w-40">
+                <SelectField label="Forme" value={rc.bc_u_shape || ''}
+                  onChange={(v) => set({ bc_u_shape: v || null })} options={U_SHAPE_OPTIONS} />
+              </div>
+              <div className="w-56">
+                <SelectField label="Matériau" value={rc.bc_u_material || ''}
+                  onChange={(v) => set({ bc_u_material: v || null })} options={U_MATERIAL_OPTIONS} />
+              </div>
+              {rc.bc_u_material === 'inox' && (
+                <div className="text-xs text-gray-500 pb-2">
+                  Fabrication : <span className="font-medium">{rc.fabrication === 'S' ? 'PRS (soudé)' : 'Laminé'}</span>
+                  {' '}(cf. groupe « Déversement » ci-dessous)
+                </div>
+              )}
+            </>
+          )}
+
+          {rc.section_type === 'O' && (
+            <>
+              <div className="w-56">
+                <SelectField label="Nuance" value={rc.bc_steel_family || ''}
+                  onChange={(v) => set({ bc_steel_family: v || null })} options={STEEL_FAMILY_OPTIONS} />
+              </div>
+              {rc.bc_steel_family && rc.bc_steel_family !== 'inox' && (
+                <div className="w-64">
+                  <SelectField label="Forme" value={rc.bc_o_shape || ''}
+                    onChange={(v) => set({ bc_o_shape: v || null })} options={O_SHAPE_OPTIONS} />
+                </div>
+              )}
+            </>
+          )}
+
+          {rc.section_type === 'X' && (
+            <div className="text-xs text-gray-500">
+              Sections pleines : toujours courbe c (y-y) / c (z-z), aucun choix nécessaire.
+            </div>
+          )}
+
+          {error && <div className="text-xs text-red-600 basis-full">{error}</div>}
+
+          {suggestion && (
+            <div className="flex items-center gap-2 text-sm basis-full sm:basis-auto">
+              <span className="text-gray-600">
+                Suggestion : <span className="font-semibold text-slate-800">{suggestion.y}</span> (y-y) /{' '}
+                <span className="font-semibold text-slate-800">{suggestion.z}</span> (z-z)
+              </span>
+              <button
+                type="button"
+                onClick={() => set({ buckling_curve_y: suggestion.y, buckling_curve_z: suggestion.z })}
+                className="text-xs px-2 py-1 rounded bg-slate-700 text-white hover:bg-slate-800"
+              >
+                Appliquer
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ─── Section repliable ─────────────────────────────────────────────────────────
 
 function Group({ title, children }) {
@@ -406,6 +577,7 @@ export default function RCRow({ rc }) {
               onChange={(v) => set({ buckling_curve_y: v })} options={BUCKLING_CURVES} />
             <SelectField label="Courbe z-z" value={rc.buckling_curve_z}
               onChange={(v) => set({ buckling_curve_z: v })} options={BUCKLING_CURVES} />
+            <BucklingCurveGuide rc={rc} set={set} />
           </Group>
 
           {/* Flambement par torsion (U uniquement — crT sans effet pour H, cf. engine_H.py) */}
