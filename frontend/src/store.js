@@ -87,6 +87,15 @@ export function createDefaultRC(rcNumber, materialNumber) {
     buckling_curve_y: 'b', // 'a'|'a0'|'b'|'c'|'d' — défaut backend pour y-y
     buckling_curve_z: 'c', // défaut backend pour z-z
 
+    // Guide de choix des courbes de flambement (Phase 29) — purement indicatif,
+    // jamais utilisé par le calcul. Alimente uniquement la suggestion affichée
+    // dans RCRow.jsx ; les valeurs ci-dessus (buckling_curve_y/z) restent la
+    // seule source utilisée par le calcul.
+    bc_steel_family: null,   // 's235_s420'|'s460'|'inox' — H, O
+    bc_u_shape: null,        // 'profile'|'corniere' — U
+    bc_u_material: null,     // 'carbone'|'inox'|'inox_forme_a_froid' — U
+    bc_o_shape: null,        // 'creuse_chaud'|'creuse_froid'|'caisson_soude'|'caisson_soude_a_sup_05tf' — O
+
     // Flambement par torsion (H, U)
     crT: 1.0,
 
