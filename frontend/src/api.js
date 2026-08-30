@@ -6,6 +6,8 @@
 //   GET  /api/sections/{catType}/{designation} → propriétés d'une section
 //   GET  /api/classification/{catType}/{designation} → classe de section
 //                                               auto-calculée (Phase 27)
+//   GET  /api/buckling-curve/{catType}/{designation} → suggestion de courbes
+//                                               de flambement (Phase 29)
 //   POST /api/calculate (multipart/form-data) → CalculationResponse
 //
 // Configuration de l'URL de base
@@ -67,6 +69,40 @@ export async function fetchSectionClassification(catType, designation, { fy, E, 
   const { data } = await apiClient.get(
     `/classification/${catType}/${encodeURIComponent(designation)}`,
     { params: { fy, E, steel_type: steelType, fabrication } }
+  )
+  return data
+}
+
+/**
+ * Suggère une paire de courbes de flambement (y-y, z-z) à partir du guide de
+ * choix (Phase 29 — transcription du document fourni par l'utilisateur).
+ * Purement indicatif : n'écrit rien, ne fait que renvoyer une suggestion que
+ * l'appelant applique ou non aux champs buckling_curve_y/z.
+ *
+ * @param {'H'|'U'|'O'|'X'} catType
+ * @param {string} designation
+ * @param {object} choices - sous-ensemble pertinent selon catType :
+ *   H : { steelFamily: 's235_s420'|'s460'|'inox', fabrication: 'L'|'S' }
+ *   U : { uShape: 'profile'|'corniere', uMaterial: 'carbone'|'inox'|'inox_forme_a_froid',
+ *         fabrication?: 'L'|'S' }   // fabrication requis seulement si uMaterial === 'inox'
+ *   O : { steelFamily: 's235_s420'|'s460'|'inox', oShape?: '...' }  // oShape requis sauf si inox
+ *   X : {}                          // aucun paramètre nécessaire
+ * @returns {Promise<{cat_type: string, designation: string, curve_y: string, curve_z: string}>}
+ * @throws {AxiosError} 422 si un choix requis pour ce type manque (message dans error.response.data.detail)
+ */
+export async function fetchBucklingCurveSuggestion(catType, designation, choices = {}) {
+  const { steelFamily, fabrication, uShape, uMaterial, oShape } = choices
+  const { data } = await apiClient.get(
+    `/buckling-curve/${catType}/${encodeURIComponent(designation)}`,
+    {
+      params: {
+        steel_family: steelFamily,
+        fabrication,
+        u_shape: uShape,
+        u_material: uMaterial,
+        o_shape: oShape,
+      },
+    }
   )
   return data
 }
