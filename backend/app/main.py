@@ -11,6 +11,8 @@ Endpoints
     GET  /api/sections/{cat_type}/{designation} → propriétés d'une section
     GET  /api/classification/{cat_type}/{designation} → classe de section
                                              auto-calculée (Phase 27)
+    GET  /api/buckling-curve/{cat_type}/{designation} → suggestion de courbes
+                                             de flambement (Phase 29)
     POST /api/calculate                   → calcul complet EC3 (Format 1 + 2)
 
 POST /api/calculate — contrat multipart/form-data
@@ -44,12 +46,17 @@ import json
 import os
 from pathlib import Path
 
+from typing import Optional
+
 from dotenv import load_dotenv
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import ValidationError
 
 from .catalogue import VALID_TYPES, get_section, list_sections, preload_all
+from .ec3.buckling_curve_guide import (
+    suggest_curves_H, suggest_curves_O, suggest_curves_U, suggest_curves_X,
+)
 from .ec3.classification import (
     section_class_H, section_class_U, section_class_O, section_class_X,
 )
@@ -206,6 +213,63 @@ def get_section_classification(
         classe = section_class_X()
 
     return {"cat_type": cat_type, "designation": designation, "section_class": str(classe)}
+
+
+@app.get("/api/buckling-curve/{cat_type}/{designation}", tags=["sections"])
+def get_buckling_curve_suggestion(
+    cat_type: str,
+    designation: str,
+    steel_family: Optional[str] = None,   # H, O — "s235_s420" | "s460" | "inox"
+    fabrication: Optional[str] = None,    # H toujours ; U si u_material == "inox"
+    u_shape: Optional[str] = None,        # U — "profile" | "corniere"
+    u_material: Optional[str] = None,     # U — "carbone" | "inox" | "inox_forme_a_froid"
+    o_shape: Optional[str] = None,        # O carbone — "creuse_chaud" | "creuse_froid" | ...
+):
+    """
+    Suggestion de courbes de flambement (Phase 29) — transcription du document
+    fourni par l'utilisateur, cf. ec3/buckling_curve_guide.py.
+
+    Purement indicatif : ne modifie rien, ne fait qu'informer le frontend
+    d'une paire (courbe y-y, courbe z-z) que l'utilisateur peut appliquer aux
+    champs RCConfig.buckling_curve_y/z ou ignorer. Cet endpoint ne participe
+    jamais au calcul.
+
+    Chaque type de section n'a besoin que d'un sous-ensemble des paramètres
+    (ex. o_shape n'a de sens que pour O ; ignoré silencieusement sinon).
+    Les paramètres manquants pour la combinaison demandée déclenchent une
+    422 avec un message précisant exactement quel choix il manque.
+    """
+    cat_type = cat_type.upper()
+    if cat_type not in VALID_TYPES:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Type de catalogue invalide : '{cat_type}'. Valeurs : {VALID_TYPES}",
+        )
+    try:
+        sec = get_section(cat_type, designation)
+    except KeyError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+    try:
+        if cat_type == "H":
+            curve_y, curve_z = suggest_curves_H(
+                steel_family, fabrication, sec["h"], sec["b"], sec["tf"],
+            )
+        elif cat_type == "U":
+            curve_y, curve_z = suggest_curves_U(u_shape, u_material, fabrication)
+        elif cat_type == "O":
+            curve_y, curve_z = suggest_curves_O(
+                steel_family, o_shape, sec["b"], sec["h"], sec["t"],
+            )
+        else:  # "X"
+            curve_y, curve_z = suggest_curves_X()
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+    return {
+        "cat_type": cat_type, "designation": designation,
+        "curve_y": curve_y, "curve_z": curve_z,
+    }
 
 
 # --- Calcul EC3 ---------------------------------------------------------------
