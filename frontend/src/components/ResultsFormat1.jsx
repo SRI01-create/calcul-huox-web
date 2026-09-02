@@ -291,6 +291,18 @@ export default function ResultsFormat1() {
                         PRS
                       </span>
                     )}
+                    {rc.is_angle && (
+                      <span className="ml-1.5 text-[10px] bg-sky-100 text-sky-700
+                                       px-1 py-0.5 rounded" title="Cornière">
+                        Cornière
+                      </span>
+                    )}
+                    {rc.is_circular && (
+                      <span className="ml-1.5 text-[10px] bg-teal-100 text-teal-700
+                                       px-1 py-0.5 rounded" title="Section circulaire">
+                        Circulaire
+                      </span>
+                    )}
                   </Td>
                   <Td cls="text-center"><ClassBadge cls={rc.section_class} /></Td>
                   <Td>{rc.material_designation}</Td>

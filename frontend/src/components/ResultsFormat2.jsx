@@ -355,7 +355,21 @@ export default function ResultsFormat2() {
                     <Td cls="text-center">
                       <TypeBadge type={row.section_type} />
                     </Td>
-                    <Td cls="font-medium text-slate-700">{row.designation}</Td>
+                    <Td cls="font-medium text-slate-700">
+                      {row.designation}
+                      {row.is_angle && (
+                        <span className="ml-1.5 text-[10px] bg-sky-100 text-sky-700
+                                         px-1 py-0.5 rounded" title="Cornière">
+                          Cornière
+                        </span>
+                      )}
+                      {row.is_circular && (
+                        <span className="ml-1.5 text-[10px] bg-teal-100 text-teal-700
+                                         px-1 py-0.5 rounded" title="Section circulaire">
+                          Circulaire
+                        </span>
+                      )}
+                    </Td>
                     <Td cls="text-center">
                       <ClassBadge cls={row.section_class} />
                     </Td>
