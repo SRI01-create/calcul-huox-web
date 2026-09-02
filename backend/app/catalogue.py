@@ -1,5 +1,8 @@
 """
 Phase 2 — Chargement et lookup des catalogues de sections.
+Phase 30 — Flags de forme (is_welded/is_angle/is_circular) désormais stockés
+directement en colonnes dans les CSV, au lieu d'être déduits du texte de la
+désignation (archaïsme hérité du classeur Excel d'origine — cf. REPRISE.md).
 
 Charge les 4 CSV (H, U, O, X) en mémoire au démarrage de l'application.
 Fournit un accès O(1) aux propriétés géométriques de ~1 171 sections.
@@ -9,15 +12,16 @@ Fonctions publiques
     preload_all()                          → pré-charge les 4 catalogues
     get_section(cat_type, designation)     → dict complet des propriétés
     list_sections(cat_type, query="")      → liste de désignations filtrées
-    detect_subtype(cat_type, designation)  → dict de flags de forme
 
-Sous-types détectés
--------------------
-    H : is_welded (préfixe "s")
-    U : is_welded, is_angle ("L ")
-    O : is_circular ("Tci"), is_square ("Tca"), is_rectangular ("Tre"), is_welded
-    X : is_circular ("Pci"), is_square ("Pca"), is_rectangular ("Pre")
-        (toutes les sections X sont soudées)
+Flags de forme stockés (colonnes CSV, 0/1 → bool)
+--------------------------------------------------
+    H : is_welded
+    U : is_welded, is_angle
+    O : is_welded, is_circular
+    X : is_welded, is_circular
+
+    (is_square/is_rectangular ont existé un temps mais n'étaient consommés
+    par aucune formule — supprimés en Phase 30.)
 
 Unités des propriétés retournées
 ---------------------------------
@@ -28,7 +32,7 @@ Unités des propriétés retournées
     Wel_y, Wpl_y, Wel_z, Wpl_z  : m³
     IW                          : m⁶
     Sw  (H) / Sw_w (U)          : m⁴
-    b   pour Tci / Pci          : None (section circulaire)
+    b   pour sections circulaires : None
     Wpl_y / Wpl_z pour cornières : None (utiliser Wel)
 """
 
@@ -41,6 +45,9 @@ import pandas as pd
 
 # ─── Chemin vers les CSV ─────────────────────────────────────────────────────
 _DATA_DIR = Path(__file__).resolve().parent.parent / "data"
+
+# Colonnes booléennes (0/1 en CSV) — castées explicitement, pas via to_numeric seul
+_FLAG_COLUMNS = ("is_welded", "is_angle", "is_circular")
 
 # Types de catalogue valides
 VALID_TYPES = ("H", "U", "O", "X")
@@ -94,50 +101,6 @@ def preload_all() -> None:
         _get_df(t)
 
 
-# ─── Détection du sous-type ──────────────────────────────────────────────────
-
-def detect_subtype(cat_type: str, designation: str) -> dict:
-    """
-    Retourne les flags de forme d'une section à partir de sa désignation.
-
-    Ces flags pilotent les choix de formules dans le moteur de calcul :
-      - is_welded      → courbe de déversement c/d au lieu de a/b (§6.3.2.3 NA)
-      - is_circular    → formules spécifiques (Tci : Bredt circ. / Pci : Timoshenko circ.)
-      - is_square      → tube creux carré (Bredt rect.) ou plein carré
-      - is_rectangular → tube creux rect. (Bredt rect.) ou plein rect.
-      - is_angle       → cornière : Wpl non disponible, déversement limité
-
-    Retour
-    ------
-    dict avec clés : is_welded, is_angle, is_circular, is_square, is_rectangular
-    """
-    d = designation.strip()
-    flags: dict[str, bool] = {
-        "is_welded":      d.startswith("s "),
-        "is_angle":       False,
-        "is_circular":    False,
-        "is_square":      False,
-        "is_rectangular": False,
-    }
-
-    if cat_type == "U":
-        # Cornière : "L " après le préfixe optionnel "s "
-        core = d[2:] if d.startswith("s ") else d
-        flags["is_angle"] = core.upper().startswith("L ")
-
-    elif cat_type == "O":
-        flags["is_circular"]    = "Tci" in d
-        flags["is_square"]      = "Tca" in d
-        flags["is_rectangular"] = "Tre" in d
-
-    elif cat_type == "X":
-        flags["is_circular"]    = "Pci" in d
-        flags["is_square"]      = "Pca" in d
-        flags["is_rectangular"] = "Pre" in d
-
-    return flags
-
-
 # ─── Accès aux propriétés d'une section ──────────────────────────────────────
 
 def get_section(cat_type: str, designation: str) -> dict:
@@ -154,8 +117,10 @@ def get_section(cat_type: str, designation: str) -> dict:
     dict contenant :
       - "cat_type"    : str
       - "designation" : str
-      - toutes les colonnes du CSV (float ou None si cellule vide)
-      - flags de detect_subtype()
+      - toutes les colonnes du CSV (float ou None si cellule vide), à
+        l'exception des colonnes de flags (is_welded/is_angle/is_circular),
+        castées en bool — présentes seulement pour les types où elles ont
+        un sens (ex. "is_angle" absent d'un dict H)
 
     Lève
     ----
@@ -165,8 +130,8 @@ def get_section(cat_type: str, designation: str) -> dict:
 
     Remarques
     ---------
-    - b = None pour les sections circulaires (Tci, Pci)
-    - Wpl_y / Wpl_z = None pour les cornières (L) → utiliser Wel_y / Wel_z
+    - b = None pour les sections circulaires
+    - Wpl_y / Wpl_z = None pour les cornières (is_angle = True) → utiliser Wel_y / Wel_z
     - d = None pour les cornières (pas d'âme pleine continue)
     - r = 0.0 pour les sections PRS (is_welded = True)
     """
@@ -186,12 +151,17 @@ def get_section(cat_type: str, designation: str) -> dict:
     row = df.loc[designation]
     props: dict = {"cat_type": cat_type, "designation": designation}
 
-    # NaN → None, float sinon
+    # NaN → None, float sinon (colonnes de flags traitées à part ci-dessous)
     for col, val in row.items():
+        if col in _FLAG_COLUMNS:
+            continue
         props[col] = None if pd.isna(val) else float(val)
 
-    # Flags de forme
-    props.update(detect_subtype(cat_type, designation))
+    # Flags de forme (0/1 en CSV) → bool, uniquement pour les colonnes
+    # présentes dans ce catalogue (ex. "is_angle" n'existe pas pour H/O/X)
+    for flag in _FLAG_COLUMNS:
+        if flag in row.index:
+            props[flag] = bool(row[flag])
 
     return props
 

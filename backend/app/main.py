@@ -205,10 +205,10 @@ def get_section_classification(
     elif cat_type == "U":
         classe = section_class_U(
             sec["h"], sec["b"], sec["tw"], sec["tf"], sec["r"], sec["d"],
-            designation, eps, is_ss, fab,
+            sec["is_angle"], eps, is_ss, fab,
         )
     elif cat_type == "O":
-        classe = section_class_O(sec["h"], sec["b"], sec["t"], designation, eps, is_ss)
+        classe = section_class_O(sec["h"], sec["b"], sec["t"], sec["is_circular"], eps, is_ss)
     else:  # "X"
         classe = section_class_X()
 

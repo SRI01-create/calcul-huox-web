@@ -326,6 +326,8 @@ class ElementLCResult(BaseModel):
     section_type: str
     designation:  str
     section_class: str   # "1", "2", "3" ou "4" (non vérifié)
+    is_angle:      bool = False   # cornière (U uniquement) — Phase 30, pour badge Format 2
+    is_circular:   bool = False   # section circulaire (O/X uniquement) — Phase 30, pour badge Format 2
 
     # Efforts internes (N et N.m)
     NEd_t: float = 0.0   # Traction (N)
@@ -354,6 +356,8 @@ class RCSummary(BaseModel):
     section_class_auto: str  # classe auto-calculée (conservative) — identique à
                               # section_class sauf si manual_section_class est renseigné
     is_welded:    bool
+    is_angle:     bool = False   # cornière (U uniquement, sinon False) — Phase 30
+    is_circular:  bool = False   # section circulaire (O/X uniquement, sinon False) — Phase 30
 
     # ── Propriétés géométriques principales ──────────────────────────────
     h:  Optional[float] = None   # mm

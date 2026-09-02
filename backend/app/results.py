@@ -95,6 +95,9 @@ def build_rc_summary(
 
     # shear_ok absent (O, X) → toujours True (AO non applicable, REPRISE.md)
     shear_ok = pre.get("shear_ok", True)
+    # is_angle absent (H, O, X) / is_circular absent (H, U) → False par défaut
+    is_angle    = pre.get("is_angle", False)
+    is_circular = pre.get("is_circular", False)
 
     return RCSummary(
         rc_number     = rc.rc_number,
@@ -103,6 +106,8 @@ def build_rc_summary(
         section_class      = str(pre["classe"]),
         section_class_auto = str(pre["classe_auto"]),
         is_welded     = pre["is_welded"],
+        is_angle      = is_angle,
+        is_circular   = is_circular,
 
         # ── Géométrie ────────────────────────────────────────────────────
         h  = pre["h"],
