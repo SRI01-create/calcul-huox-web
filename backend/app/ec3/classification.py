@@ -7,8 +7,8 @@ Toutes les formules sont extraites directement du fichier Excel
 Fonctions publiques
 -------------------
     section_class_H(h,b,tw,tf,r,d, eps, is_stainless, fabrication) → int
-    section_class_U(h,b,tw,tf,r,d, designation, eps, is_stainless, fab) → int
-    section_class_O(h,b,t, designation, eps, is_stainless) → int
+    section_class_U(h,b,tw,tf,r,d, is_angle, eps, is_stainless, fab) → int
+    section_class_O(h,b,t, is_circular, eps, is_stainless) → int
     section_class_X() → int  (toujours 1)
     can_ignore_shear_buckling(h,tf,tw, eps, is_stainless, is_angle) → bool
     net_areas(A, A_trou, Af_trou, tf, b) → dict
@@ -112,7 +112,7 @@ def section_class_H(
 def section_class_U(
     h: float, b: float, tw: float, tf: float | None,
     r: float | None, d: float | None,
-    designation: str,
+    is_angle: bool,
     eps: float,
     is_stainless: bool,
     fabrication: str = "L",
@@ -122,7 +122,10 @@ def section_class_U(
 
     Source Excel : colonne U feuille U ligne 61
     -------------------------------------------
-    Détection cornière : FIND("L ", désignation) — note l'espace après "L"
+    Détection cornière : à l'origine FIND("L ", désignation) — remplacé en
+    Phase 30 par le flag `is_angle` du catalogue (cf. catalogue.py), pour ne
+    plus dépendre du texte de la désignation (nécessaire aussi pour les
+    sections personnalisées, qui n'ont pas de désignation-catalogue à parser).
 
     Cornière : classes 3 ou 4 uniquement (EC3)
         Carbon : h/tw ≤ 15ε  ET (h+b)/(tw+tf) ≤ 11.5ε  → 3 ; sinon 4
@@ -137,8 +140,6 @@ def section_class_U(
         Inox F  : 10ε / 10.4ε / 11.9ε
         Classe = MAX(âme, semelle)
     """
-    is_angle = "L " in designation       # FIND("L ", T61) dans Excel
-
     if is_angle:
         tf_eff = tw if (tf is None) else tf
         r1 = h / tw
@@ -170,7 +171,7 @@ def section_class_U(
 
 def section_class_O(
     h: float, b: float | None, t: float,
-    designation: str,
+    is_circular: bool,
     eps: float,
     is_stainless: bool,
 ) -> int:
@@ -179,6 +180,10 @@ def section_class_O(
 
     Source Excel : colonne U feuille O ligne 61
     -------------------------------------------
+    Détection circulaire : à l'origine FIND("Tci", désignation) — remplacé en
+    Phase 30 par le flag `is_circular` du catalogue (cf. catalogue.py), même
+    raison qu'is_angle ci-dessus pour section_class_U.
+
     Tci (circulaire) : D/t ≤ {50·ε² / 70·ε² / 90·ε²} → {1/2/3} ; sinon 4
         Note : l'Excel retourne "X" (string) au lieu de 4 pour les Tci
         dépassant la classe 3. On retourne 4 (int) pour uniformiser.
@@ -187,7 +192,7 @@ def section_class_O(
         Carbone : 33ε / 38ε / 42ε
         Inox    : 25.7ε / 26.7ε / 30.7ε
     """
-    if "Tci" in designation:
+    if is_circular:
         return _cls(h / t, _CHS, eps ** 2)     # ε² ici !
     else:
         b_eff = h if b is None else b
