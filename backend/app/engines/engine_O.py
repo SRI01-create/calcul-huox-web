@@ -63,7 +63,7 @@ def precompute(rc: RCConfig, mat: MaterialConfig) -> dict:
     Av_y  = sec["Av_y"];  Av_z  = sec["Av_z"]
 
     # ── Classification ───────────────────────────────────────────────────
-    classe_auto = section_class_O(h, b, t, rc.designation, eps, is_ss)
+    classe_auto = section_class_O(h, b, t, is_circular, eps, is_ss)
     # Classe manuelle (Phase 27) — voir engine_H.precompute() pour le détail.
     classe = int(rc.manual_section_class) if rc.manual_section_class else classe_auto
 
@@ -197,6 +197,7 @@ def _check_row(row: pd.Series, pre: dict, rc: RCConfig) -> ElementLCResult:
         lc_name=str(row["lc_name"]), element_id=int(row["element_id"]),
         rc_number=rc.rc_number, section_type=rc.section_type,
         designation=rc.designation, section_class=str(classe),
+        is_circular=pre["is_circular"],
         NEd_t=NEd_t, NEd_c=NEd_c, Vy_Ed=Vy, Vz_Ed=Vz,
         TEd=TEd, My_Ed=My, Mz_Ed=Mz,
         ratios=ratios, max_ratio=max_r,

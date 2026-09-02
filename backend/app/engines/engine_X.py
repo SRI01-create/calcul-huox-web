@@ -185,6 +185,7 @@ def _check_row(row: pd.Series, pre: dict, rc: RCConfig) -> ElementLCResult:
         lc_name=str(row["lc_name"]), element_id=int(row["element_id"]),
         rc_number=rc.rc_number, section_type=rc.section_type,
         designation=rc.designation, section_class=str(classe),
+        is_circular=pre["is_circular"],
         NEd_t=NEd_t, NEd_c=NEd_c, Vy_Ed=Vy, Vz_Ed=Vz,
         TEd=TEd, My_Ed=My, Mz_Ed=Mz,
         ratios=ratios, max_ratio=max_r,
