@@ -67,17 +67,32 @@ const RATIOS = [
 
 // ─── Badges (identiques à Format 1) ──────────────────────────────────────────
 
-function TypeBadge({ type }) {
+// Glyphe selon type ET forme réelle (Phase 31) — voir ResultsFormat1.jsx.
+function shapeFlag(type, isAngle, isCircular) {
+  if (type === 'U') return isAngle
+    ? { glyph: 'L', title: 'Cornière (U)' }
+    : { glyph: 'U', title: 'Section U' }
+  if (type === 'O') return isCircular
+    ? { glyph: 'O', title: 'Section circulaire (O)' }
+    : { glyph: '□', title: 'Section creuse non circulaire (O)' }
+  if (type === 'X') return isCircular
+    ? { glyph: '●', title: 'Section pleine circulaire (X)' }
+    : { glyph: '■', title: 'Section pleine non circulaire (X)' }
+  return { glyph: type, title: 'Section H (I/H)' }
+}
+
+function TypeBadge({ type, isAngle, isCircular }) {
   const p = {
     H: 'bg-blue-100 text-blue-800',
     U: 'bg-violet-100 text-violet-800',
     O: 'bg-teal-100 text-teal-800',
     X: 'bg-orange-100 text-orange-800',
   }
+  const { glyph, title } = shapeFlag(type, isAngle, isCircular)
   return (
     <span className={`px-1.5 py-0.5 rounded text-[11px] font-bold
-                      ${p[type] ?? 'bg-gray-100 text-gray-600'}`}>
-      {type}
+                      ${p[type] ?? 'bg-gray-100 text-gray-600'}`} title={title}>
+      {glyph}
     </span>
   )
 }
@@ -353,20 +368,14 @@ export default function ResultsFormat2() {
                     <Td cls="text-right tabular-nums">{row.element_id}</Td>
                     <Td cls="font-mono text-slate-600 text-[11px]">{row.lc_name}</Td>
                     <Td cls="text-center">
-                      <TypeBadge type={row.section_type} />
+                      <TypeBadge type={row.section_type} isAngle={row.is_angle} isCircular={row.is_circular} />
                     </Td>
                     <Td cls="font-medium text-slate-700">
                       {row.designation}
-                      {row.is_angle && (
-                        <span className="ml-1.5 text-[10px] bg-sky-100 text-sky-700
-                                         px-1 py-0.5 rounded" title="Cornière">
-                          Cornière
-                        </span>
-                      )}
-                      {row.is_circular && (
-                        <span className="ml-1.5 text-[10px] bg-teal-100 text-teal-700
-                                         px-1 py-0.5 rounded" title="Section circulaire">
-                          Circulaire
+                      {row.is_welded && (
+                        <span className="ml-1.5 text-[10px] bg-amber-100 text-amber-700
+                                         px-1 py-0.5 rounded" title="Section soudée (PRS)">
+                          PRS
                         </span>
                       )}
                     </Td>
