@@ -94,17 +94,37 @@ function Td({ children, cls = '' }) {
   )
 }
 
-function TypeBadge({ type }) {
+// Glyphe affiché selon le type ET la forme réelle de la section (Phase 31) :
+//   H → H
+//   U → U (profilé) | L (cornière)
+//   O → □ (non circulaire) | O (circulaire)
+//   X → ■ (non circulaire) | ● (circulaire)
+// Le badge [PRS] (is_welded) reste séparé, à côté de la désignation.
+function shapeFlag(type, isAngle, isCircular) {
+  if (type === 'U') return isAngle
+    ? { glyph: 'L', title: 'Cornière (U)' }
+    : { glyph: 'U', title: 'Section U' }
+  if (type === 'O') return isCircular
+    ? { glyph: 'O', title: 'Section circulaire (O)' }
+    : { glyph: '□', title: 'Section creuse non circulaire (O)' }
+  if (type === 'X') return isCircular
+    ? { glyph: '●', title: 'Section pleine circulaire (X)' }
+    : { glyph: '■', title: 'Section pleine non circulaire (X)' }
+  return { glyph: type, title: 'Section H (I/H)' }
+}
+
+function TypeBadge({ type, isAngle, isCircular }) {
   const p = {
     H: 'bg-blue-100   text-blue-800',
     U: 'bg-violet-100 text-violet-800',
     O: 'bg-teal-100   text-teal-800',
     X: 'bg-orange-100 text-orange-800',
   }
+  const { glyph, title } = shapeFlag(type, isAngle, isCircular)
   return (
     <span className={`px-1.5 py-0.5 rounded text-[11px] font-bold
-                      ${p[type] ?? 'bg-gray-100 text-gray-600'}`}>
-      {type}
+                      ${p[type] ?? 'bg-gray-100 text-gray-600'}`} title={title}>
+      {glyph}
     </span>
   )
 }
@@ -282,25 +302,15 @@ export default function ResultsFormat1() {
 
                   {/* Identification */}
                   <Td cls="font-semibold text-slate-800">{rc.rc_number}</Td>
-                  <Td cls="text-center"><TypeBadge type={rc.section_type} /></Td>
+                  <Td cls="text-center">
+                    <TypeBadge type={rc.section_type} isAngle={rc.is_angle} isCircular={rc.is_circular} />
+                  </Td>
                   <Td cls="min-w-[120px]">
                     <span className="font-medium text-slate-800">{rc.designation}</span>
                     {rc.is_welded && (
                       <span className="ml-1.5 text-[10px] bg-amber-100 text-amber-700
                                        px-1 py-0.5 rounded" title="Section soudée (PRS)">
                         PRS
-                      </span>
-                    )}
-                    {rc.is_angle && (
-                      <span className="ml-1.5 text-[10px] bg-sky-100 text-sky-700
-                                       px-1 py-0.5 rounded" title="Cornière">
-                        Cornière
-                      </span>
-                    )}
-                    {rc.is_circular && (
-                      <span className="ml-1.5 text-[10px] bg-teal-100 text-teal-700
-                                       px-1 py-0.5 rounded" title="Section circulaire">
-                        Circulaire
                       </span>
                     )}
                   </Td>
