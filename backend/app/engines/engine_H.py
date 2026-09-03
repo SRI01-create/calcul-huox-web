@@ -324,6 +324,7 @@ def _check_row(
         section_type = rc.section_type,
         designation  = rc.designation,
         section_class= str(classe),
+        is_welded    = pre["is_welded"],
         NEd_t = NEd_t, NEd_c = NEd_c,
         Vy_Ed = Vy,    Vz_Ed = Vz,
         TEd   = TEd,   My_Ed = My, Mz_Ed = Mz,
