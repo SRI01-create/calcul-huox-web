@@ -326,6 +326,7 @@ class ElementLCResult(BaseModel):
     section_type: str
     designation:  str
     section_class: str   # "1", "2", "3" ou "4" (non vérifié)
+    is_welded:     bool = False   # section soudée (PRS) — Phase 31, pour flag Format 2
     is_angle:      bool = False   # cornière (U uniquement) — Phase 30, pour badge Format 2
     is_circular:   bool = False   # section circulaire (O/X uniquement) — Phase 30, pour badge Format 2
 
