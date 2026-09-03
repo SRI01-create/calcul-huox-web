@@ -203,18 +203,57 @@ function SectionPicker({ sectionType, designation, onChange }) {
       )}
 
       {props && (
-        <p className="mt-1 text-xs text-gray-500">
-          h={props.h}{props.b != null && ` · b=${props.b}`}
-          {props.tw != null && ` · tw=${props.tw}`}
-          {props.tf != null && ` · tf=${props.tf}`}
-          {props.t != null && ` · t=${props.t}`}
-          {' '}mm · A={(props.A * 1e4).toFixed(2)} cm²
-          {props.is_welded && ' · PRS soudé'}
-          {props.is_angle && ' · cornière'}
-          {props.is_circular && ' · circulaire'}
+        <p className="mt-1 text-xs text-gray-500 flex items-center flex-wrap gap-x-1">
+          <span>
+            h={props.h}{props.b != null && ` · b=${props.b}`}
+            {props.tw != null && ` · tw=${props.tw}`}
+            {props.tf != null && ` · tf=${props.tf}`}
+            {props.t != null && ` · t=${props.t}`}
+            {' '}mm · A={(props.A * 1e4).toFixed(2)} cm²
+          </span>
+          <ShapeFlags sectionType={sectionType} isWelded={props.is_welded}
+            isAngle={props.is_angle} isCircular={props.is_circular} />
         </p>
       )}
     </div>
+  )
+}
+
+// ─── Flags de forme (Phase 31) ────────────────────────────────────────────────
+// Même glyphe qu'en page "3 — Résultats" (ResultsFormat1/2.jsx) : U/L, □/O, ■/●,
+// + [PRS] séparé pour is_welded — cf. leur shapeFlag() pour la logique de référence.
+function ShapeFlags({ sectionType, isWelded, isAngle, isCircular }) {
+  let glyph = sectionType
+  let title = 'Section H (I/H)'
+  if (sectionType === 'U') {
+    glyph = isAngle ? 'L' : 'U'
+    title = isAngle ? 'Cornière (U)' : 'Section U'
+  } else if (sectionType === 'O') {
+    glyph = isCircular ? 'O' : '□'
+    title = isCircular ? 'Section circulaire (O)' : 'Section creuse non circulaire (O)'
+  } else if (sectionType === 'X') {
+    glyph = isCircular ? '●' : '■'
+    title = isCircular ? 'Section pleine circulaire (X)' : 'Section pleine non circulaire (X)'
+  }
+  const p = {
+    H: 'bg-blue-100   text-blue-800',
+    U: 'bg-violet-100 text-violet-800',
+    O: 'bg-teal-100   text-teal-800',
+    X: 'bg-orange-100 text-orange-800',
+  }
+  return (
+    <span className="flex items-center gap-1">
+      <span className={`px-1.5 py-0.5 rounded text-[11px] font-bold ${p[sectionType] ?? 'bg-gray-100 text-gray-600'}`}
+        title={title}>
+        {glyph}
+      </span>
+      {isWelded && (
+        <span className="px-1 py-0.5 rounded text-[10px] bg-amber-100 text-amber-700"
+          title="Section soudée (PRS)">
+          PRS
+        </span>
+      )}
+    </span>
   )
 }
 
