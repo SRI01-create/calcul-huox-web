@@ -60,12 +60,6 @@ class SteelType(str, Enum):
     STAINLESS = "inox"
 
 
-class FabricationType(str, Enum):
-    """L = laminé ou formé à froid · S = PRS soudé (influence λLT,0 et courbe déversement)."""
-    LAMINATED = "L"
-    WELDED    = "S"
-
-
 class HoleType(str, Enum):
     """P = pleine · T = trouée cat. A/B · C = trouée cat. C."""
     FULL     = "P"
@@ -177,10 +171,6 @@ class RCConfig(BaseModel):
             "Configuration de déversement : '1' à '6' (tableau EC3 simplifié) "
             "ou valeur numérique du Mcr en N.m (ex. '12500.0' pour Mcr manuel)"
         ),
-    )
-    fabrication: FabricationType = Field(
-        FabricationType.LAMINATED,
-        description="L = laminé/formé à froid · S = PRS soudé (influence λLT,0 et courbe LTB)",
     )
     zG: float = Field(
         0.0,

@@ -61,7 +61,7 @@ from .ec3.classification import (
     section_class_H, section_class_U, section_class_O, section_class_X,
 )
 from .ec3.utils import epsilon
-from .models import CalculationRequest, CalculationResponse, FabricationType, SteelType
+from .models import CalculationRequest, CalculationResponse, SteelType
 from .parsers import build_all_lc, parse_ele_file, parse_lc_file, split_axial
 from .results import build_response
 
@@ -160,24 +160,27 @@ def get_section_classification(
     fy: float,
     E: float,
     steel_type: SteelType = SteelType.CARBON,
-    fabrication: FabricationType = FabricationType.LAMINATED,
 ):
     """
     Classe de section (1 à 4) déterminée de façon conservative (compression
     pure, Table 5.2), à partir de la géométrie catalogue et des paramètres
-    matériau/fabrication fournis. Aucun effort interne n'entre en jeu — la
-    classe ne dépend que de la section, du matériau et de la fabrication.
+    matériau fournis. Aucun effort interne n'entre en jeu — la classe ne
+    dépend que de la section et du matériau.
 
     Phase 27 : utilisé par le frontend pour afficher la classe auto-calculée
     dès l'étape "1 — Configuration RC & Matériaux" (avant tout upload de
     fichiers), en amont du calcul complet — permet à l'utilisateur de décider
     s'il souhaite la forcer via RCConfig.manual_section_class.
 
+    Phase 31 : la fabrication (laminé/PRS soudé) n'est plus un paramètre
+    saisi par l'utilisateur — elle est déduite de is_welded dans le
+    catalogue, pour la désignation choisie (cf. RCConfig, plus de champ
+    `fabrication`).
+
     Paramètres
     ----------
     fy, E       : caractéristiques du matériau référencé par le RC (MPa)
     steel_type  : "carbone" | "inox"
-    fabrication : "L" (laminé/formé à froid) | "S" (PRS soudé)
 
     Retour
     ------
@@ -196,7 +199,7 @@ def get_section_classification(
 
     is_ss = (steel_type == SteelType.STAINLESS)
     eps = epsilon(fy, E, is_ss)
-    fab = fabrication.value if isinstance(fabrication, FabricationType) else fabrication
+    fab = "S" if sec.get("is_welded") else "L"   # Phase 31 — déduit du catalogue
 
     if cat_type == "H":
         classe = section_class_H(
@@ -220,7 +223,6 @@ def get_buckling_curve_suggestion(
     cat_type: str,
     designation: str,
     steel_family: Optional[str] = None,   # H, O — "s235_s420" | "s460" | "inox"
-    fabrication: Optional[str] = None,    # H toujours ; U si u_material == "inox"
     u_shape: Optional[str] = None,        # U — "profile" | "corniere"
     u_material: Optional[str] = None,     # U — "carbone" | "inox" | "inox_forme_a_froid"
     o_shape: Optional[str] = None,        # O carbone — "creuse_chaud" | "creuse_froid" | ...
@@ -238,6 +240,9 @@ def get_buckling_curve_suggestion(
     (ex. o_shape n'a de sens que pour O ; ignoré silencieusement sinon).
     Les paramètres manquants pour la combinaison demandée déclenchent une
     422 avec un message précisant exactement quel choix il manque.
+
+    Phase 31 : la fabrication (H toujours ; U si u_material == "inox") n'est
+    plus un paramètre — elle est déduite de is_welded dans le catalogue.
     """
     cat_type = cat_type.upper()
     if cat_type not in VALID_TYPES:
@@ -249,6 +254,8 @@ def get_buckling_curve_suggestion(
         sec = get_section(cat_type, designation)
     except KeyError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+    fabrication = "S" if sec.get("is_welded") else "L"   # Phase 31 — déduit du catalogue
 
     try:
         if cat_type == "H":
