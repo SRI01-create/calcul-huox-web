@@ -86,9 +86,10 @@ def lambda0_flexural(
     — confirmé erreur de construction Excel (incohérence entre feuilles
     pour un même phénomène physique), pas un choix d'ingénieur. Le code
     s'aligne désormais sur U plutôt que de reproduire l'omission d'Excel.
-    Non vérifiable numériquement (RCConfig.fabrication n'autorise pas
-    encore "F" côté API — cf. FabricationType, models.py — donc aucune
-    ligne réelle CO="F" + inox + H n'existe dans les classeurs de test).
+    Non vérifiable numériquement (CO="F" n'est atteignable nulle part côté
+    API — déduit du catalogue depuis Phase 31, valeurs possibles "L"/"S"
+    uniquement — donc aucune ligne réelle CO="F" + inox + H n'existe dans
+    les classeurs de test).
     """
     if not is_stainless:
         return 0.2
