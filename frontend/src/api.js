@@ -56,19 +56,20 @@ export async function fetchSectionProperties(catType, designation) {
 
 /**
  * Récupère la classe de section (1 à 4) auto-calculée de façon conservative
- * (compression pure, Table 5.2), pour une section + un matériau + une
- * fabrication donnés. Ne dépend d'aucun effort interne — appelable dès
- * l'étape de configuration RC, avant tout upload de fichiers (Phase 27).
+ * (compression pure, Table 5.2), pour une section + un matériau donnés. Ne
+ * dépend d'aucun effort interne — appelable dès l'étape de configuration RC,
+ * avant tout upload de fichiers (Phase 27). La fabrication (laminé/PRS) est
+ * déduite côté backend depuis is_welded (catalogue) — Phase 31.
  *
  * @param {'H'|'U'|'O'|'X'} catType
  * @param {string} designation
- * @param {{fy: number, E: number, steelType: 'carbone'|'inox', fabrication: 'L'|'S'}} material
+ * @param {{fy: number, E: number, steelType: 'carbone'|'inox'}} material
  * @returns {Promise<{cat_type: string, designation: string, section_class: string}>}
  */
-export async function fetchSectionClassification(catType, designation, { fy, E, steelType, fabrication }) {
+export async function fetchSectionClassification(catType, designation, { fy, E, steelType }) {
   const { data } = await apiClient.get(
     `/classification/${catType}/${encodeURIComponent(designation)}`,
-    { params: { fy, E, steel_type: steelType, fabrication } }
+    { params: { fy, E, steel_type: steelType } }
   )
   return data
 }
@@ -82,22 +83,20 @@ export async function fetchSectionClassification(catType, designation, { fy, E, 
  * @param {'H'|'U'|'O'|'X'} catType
  * @param {string} designation
  * @param {object} choices - sous-ensemble pertinent selon catType :
- *   H : { steelFamily: 's235_s420'|'s460'|'inox', fabrication: 'L'|'S' }
- *   U : { uShape: 'profile'|'corniere', uMaterial: 'carbone'|'inox'|'inox_forme_a_froid',
- *         fabrication?: 'L'|'S' }   // fabrication requis seulement si uMaterial === 'inox'
+ *   H : { steelFamily: 's235_s420'|'s460'|'inox' }   // fabrication déduite du catalogue (Phase 31)
+ *   U : { uShape: 'profile'|'corniere', uMaterial: 'carbone'|'inox'|'inox_forme_a_froid' }
  *   O : { steelFamily: 's235_s420'|'s460'|'inox', oShape?: '...' }  // oShape requis sauf si inox
  *   X : {}                          // aucun paramètre nécessaire
  * @returns {Promise<{cat_type: string, designation: string, curve_y: string, curve_z: string}>}
  * @throws {AxiosError} 422 si un choix requis pour ce type manque (message dans error.response.data.detail)
  */
 export async function fetchBucklingCurveSuggestion(catType, designation, choices = {}) {
-  const { steelFamily, fabrication, uShape, uMaterial, oShape } = choices
+  const { steelFamily, uShape, uMaterial, oShape } = choices
   const { data } = await apiClient.get(
     `/buckling-curve/${catType}/${encodeURIComponent(designation)}`,
     {
       params: {
         steel_family: steelFamily,
-        fabrication,
         u_shape: uShape,
         u_material: uMaterial,
         o_shape: oShape,

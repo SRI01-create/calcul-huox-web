@@ -102,7 +102,8 @@ export function createDefaultRC(rcNumber, materialNumber) {
     // Déversement (H, U)
     Lm: 1.0,
     ltb_config: '3', // '1'-'6' ou Mcr (N.m) saisi en chaîne numérique
-    fabrication: 'L', // 'L' (laminé) | 'S' (PRS soudé)
+    // fabrication (Laminé/PRS) retiré en Phase 31 — déduit du catalogue
+    // (is_welded) côté backend, plus de champ éditable côté RC.
     zG: 0.0,
 
     // Trous
