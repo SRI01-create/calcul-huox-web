@@ -4,8 +4,13 @@
 //   section_type, designation, material_number, manual_section_class (Phase 27),
 //   L, cry, crz, buckling_curve_y, buckling_curve_z,
 //   bc_steel_family/bc_u_shape/bc_u_material/bc_o_shape (guide, Phase 29 — indicatif),
-//   crT (U uniquement — sans effet pour H), Lm, ltb_config, fabrication, zG (H/U),
+//   crT (U uniquement — sans effet pour H), Lm, ltb_config, zG (H/U),
 //   PTC, A_trou, Af_trou, kr
+//
+// Phase 31 : la fabrication (laminé/PRS soudé) n'est plus un champ éditable —
+// déduite automatiquement par le backend depuis is_welded (catalogue) pour la
+// désignation choisie. Le flag [PRS] (+ forme U/L, O/□, X/■●) reste affiché
+// dans l'aperçu de section ci-dessous (ShapeFlags) à titre informatif.
 //
 // Le rc_number n'est pas modifiable (identifiant stable côté store).
 
@@ -277,7 +282,7 @@ const MANUAL_CLASS_OPTIONS = [
 ]
 
 function ClassificationControl({
-  sectionType, designation, fy, E, steelType, fabrication,
+  sectionType, designation, fy, E, steelType,
   manualClass, onManualClassChange,
 }) {
   const [autoClass, setAutoClass] = useState(null)
@@ -288,11 +293,11 @@ function ClassificationControl({
       return
     }
     let cancelled = false
-    fetchSectionClassification(sectionType, designation, { fy, E, steelType, fabrication })
+    fetchSectionClassification(sectionType, designation, { fy, E, steelType })
       .then((data) => { if (!cancelled) setAutoClass(data.section_class) })
       .catch(() => { if (!cancelled) setAutoClass(null) })
     return () => { cancelled = true }
-  }, [sectionType, designation, fy, E, steelType, fabrication])
+  }, [sectionType, designation, fy, E, steelType])
 
   const isForced = !!manualClass && manualClass !== autoClass
 
@@ -339,15 +344,16 @@ function BucklingCurveGuide({ rc, set }) {
   const [error, setError] = useState(null)
 
   // Choix nécessaires et complets pour ce type de section → prêts à suggérer.
+  // Phase 31 : la fabrication (laminé/PRS soudé) n'est plus un choix utilisateur
+  // — elle est déduite par le backend depuis is_welded (catalogue), pour H et U.
   let ready = false
   let choices = {}
   if (rc.section_type === 'H') {
     ready = !!rc.bc_steel_family
-    choices = { steelFamily: rc.bc_steel_family, fabrication: rc.fabrication }
+    choices = { steelFamily: rc.bc_steel_family }
   } else if (rc.section_type === 'U') {
-    const needsFabrication = rc.bc_u_material === 'inox'
-    ready = !!rc.bc_u_shape && !!rc.bc_u_material && (!needsFabrication || !!rc.fabrication)
-    choices = { uShape: rc.bc_u_shape, uMaterial: rc.bc_u_material, fabrication: rc.fabrication }
+    ready = !!rc.bc_u_shape && !!rc.bc_u_material
+    choices = { uShape: rc.bc_u_shape, uMaterial: rc.bc_u_material }
   } else if (rc.section_type === 'O') {
     const needsShape = rc.bc_steel_family && rc.bc_steel_family !== 'inox'
     ready = !!rc.bc_steel_family && (!needsShape || !!rc.bc_o_shape)
@@ -393,16 +399,10 @@ function BucklingCurveGuide({ rc, set }) {
       {open && (
         <div className="mt-2 p-3 bg-slate-50 border border-slate-200 rounded-md flex flex-wrap items-end gap-3">
           {rc.section_type === 'H' && (
-            <>
-              <div className="w-56">
-                <SelectField label="Nuance" value={rc.bc_steel_family || ''}
-                  onChange={(v) => set({ bc_steel_family: v || null })} options={STEEL_FAMILY_OPTIONS} />
-              </div>
-              <div className="text-xs text-gray-500 pb-2">
-                Fabrication : <span className="font-medium">{rc.fabrication === 'S' ? 'PRS (soudé)' : 'Laminé'}</span>
-                {' '}(cf. groupe « Déversement » ci-dessous)
-              </div>
-            </>
+            <div className="w-56">
+              <SelectField label="Nuance" value={rc.bc_steel_family || ''}
+                onChange={(v) => set({ bc_steel_family: v || null })} options={STEEL_FAMILY_OPTIONS} />
+            </div>
           )}
 
           {rc.section_type === 'U' && (
@@ -415,12 +415,6 @@ function BucklingCurveGuide({ rc, set }) {
                 <SelectField label="Matériau" value={rc.bc_u_material || ''}
                   onChange={(v) => set({ bc_u_material: v || null })} options={U_MATERIAL_OPTIONS} />
               </div>
-              {rc.bc_u_material === 'inox' && (
-                <div className="text-xs text-gray-500 pb-2">
-                  Fabrication : <span className="font-medium">{rc.fabrication === 'S' ? 'PRS (soudé)' : 'Laminé'}</span>
-                  {' '}(cf. groupe « Déversement » ci-dessous)
-                </div>
-              )}
             </>
           )}
 
@@ -569,7 +563,6 @@ export default function RCRow({ rc }) {
             fy={material?.fy}
             E={material?.E}
             steelType={material?.steel_type}
-            fabrication={rc.fabrication}
             manualClass={rc.manual_section_class}
             onManualClassChange={(v) => set({ manual_section_class: v })}
           />
@@ -632,14 +625,9 @@ export default function RCRow({ rc }) {
             <Group title="Déversement — §6.3.2, Annexe F">
               <NumField label="Lm" unit="m" value={rc.Lm} step="0.01" min="0.001"
                 onChange={(v) => set({ Lm: v })} />
-              <SelectField label="Fabrication" value={rc.fabrication}
-                onChange={(v) => set({ fabrication: v })}
-                options={[
-                  { value: 'L', label: 'L — Laminé / formé à froid' },
-                  { value: 'S', label: 'S — PRS soudé' },
-                ]} />
               <NumField label="zG" unit="mm" value={rc.zG} step="1"
                 onChange={(v) => set({ zG: v })} />
+              <div />
               <div />
 
               <div className="col-span-2 sm:col-span-3 lg:col-span-4 flex items-center gap-4 text-sm">
