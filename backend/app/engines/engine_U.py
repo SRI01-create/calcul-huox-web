@@ -60,7 +60,7 @@ def precompute(rc: RCConfig, mat: MaterialConfig) -> dict:
     is_ss = (mat.steel_type == "inox")
     gM0, gM1, gM2 = gamma_M(is_ss)
     eps   = epsilon(fy, E, is_ss)
-    fab   = rc.fabrication
+    fab   = "S" if sec["is_welded"] else "L"   # Phase 31 — déduit du catalogue (plus de champ manuel)
     is_angle = sec["is_angle"]
 
     h  = sec["h"];  b  = sec["b"]
@@ -119,7 +119,7 @@ def precompute(rc: RCConfig, mat: MaterialConfig) -> dict:
     return {
         "sec": sec, "classe": classe, "classe_auto": classe_auto,
         "shear_ok": shear_ok, "is_angle": is_angle,
-        "is_welded": sec["is_welded"], "epsilon": eps,
+        "is_welded": sec["is_welded"], "fab": fab, "epsilon": eps,
         "h": h, "b": b, "tw": tw, "tf": tf_eff, "t": None,
         "A": A, "Iy": Iy, "Iz": Iz, "It": It, "IW": IW, "Sw_w": Sw_w,
         "Wpl_y": Wpl_y, "Wel_y": Wel_y, "Wpl_z": Wpl_z, "Wel_z": Wel_z,
@@ -197,7 +197,7 @@ def _check_row(row: pd.Series, pre: dict, rc: RCConfig) -> ElementLCResult:
         lambda_bar_LT=pre["lambda_bar_LT"], Mb_Rd=pre["Mb_Rd"],
         My_c_Rd=my_c or 1e30, Mz_c_Rd=mz_c or 1e30,
         Cmy=1.0, Cmz=1.0, CmLT=1.0,
-        fabrication=rc.fabrication,
+        fabrication=pre["fab"],
         NEd_c=NEd_c, My_Ed=My, Mz_Ed=Mz,
         section_type="U",
     )

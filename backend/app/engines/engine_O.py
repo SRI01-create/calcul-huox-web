@@ -52,7 +52,8 @@ def precompute(rc: RCConfig, mat: MaterialConfig) -> dict:
     is_ss = (mat.steel_type == "inox")
     gM0, gM1, gM2 = gamma_M(is_ss)
     eps   = epsilon(fy, E, is_ss)
-    fab   = rc.fabrication
+    fab   = "S" if sec["is_welded"] else "L"   # Phase 31 — déduit du catalogue ; sans effet
+                                                # sur O (lambda0_flexural ignore CO pour O)
     is_circular = sec["is_circular"]
 
     h = sec["h"]; b = sec["b"]; t = sec["t"]
@@ -99,7 +100,7 @@ def precompute(rc: RCConfig, mat: MaterialConfig) -> dict:
 
     return {
         "sec": sec, "classe": classe, "classe_auto": classe_auto, "is_circular": is_circular,
-        "is_welded": sec["is_welded"], "epsilon": eps,
+        "is_welded": sec["is_welded"], "fab": fab, "epsilon": eps,
         "h": h, "b": b, "t": t, "tw": None, "tf": None,
         "A": A, "Iy": Iy, "Iz": Iz, "It": It,
         "Wpl_y": Wpl_y, "Wel_y": Wel_y, "Wpl_z": Wpl_z, "Wel_z": Wel_z,
@@ -172,7 +173,7 @@ def _check_row(row: pd.Series, pre: dict, rc: RCConfig) -> ElementLCResult:
         lambda_bar_LT=None, Mb_Rd=None,
         My_c_Rd=my_c or 1e30, Mz_c_Rd=mz_c or 1e30,
         Cmy=1.0, Cmz=1.0, CmLT=1.0,
-        fabrication=rc.fabrication,
+        fabrication=pre["fab"],
         NEd_c=NEd_c, My_Ed=My, Mz_Ed=Mz,
         section_type="O",
     )
@@ -217,4 +218,3 @@ def run_O(rc: RCConfig, material: MaterialConfig, df: pd.DataFrame) -> list[Elem
         return []
     pre = precompute(rc, material)
     return [_check_row(row, pre, rc) for _, row in df.iterrows()]
-    
