@@ -193,3 +193,67 @@ def list_sections(cat_type: str, query: str = "") -> list[str]:
         designations = [d for d in designations if q in d.lower()]
 
     return sorted(designations)
+
+
+# ─── Résolution catalogue ou section personnalisée (Phase 32) ────────────────
+
+def resolve_section(rc) -> dict:
+    """
+    Retourne le dict de propriétés de section pour un RC — soit depuis le
+    catalogue (get_section, comportement historique), soit depuis
+    rc.custom_section si renseigné (section personnalisée, hors catalogue).
+
+    Même format de sortie dans les deux cas (mêmes clés, mêmes unités) :
+    les moteurs de calcul (engines/*.py) ne font aucune différence entre
+    les deux origines — un seul point d'appel (`resolve_section(rc)`) a
+    remplacé `get_section(rc.section_type, rc.designation)` dans chacun
+    des 4 moteurs.
+
+    Lève ValueError si un champ requis pour la famille rc.section_type
+    manque dans rc.custom_section (→ HTTP 400 côté main.py, même filet
+    que les ValueError déjà levées ailleurs dans le calcul).
+    """
+    if rc.custom_section is None:
+        return get_section(rc.section_type, rc.designation)
+
+    cs = rc.custom_section
+    section_type = rc.section_type  # str simple (RCConfig: use_enum_values=True)
+    missing: list[str] = []
+
+    def require(*names: str) -> None:
+        for name in names:
+            if getattr(cs, name) is None:
+                missing.append(name)
+
+    if section_type == "H":
+        require("b", "tw", "tf", "r", "d", "Wpl_y", "Wpl_z", "IW", "Sw")
+    elif section_type == "U":
+        # NB : "r" peut être None même hors cornière — certains profils U
+        # à froid du catalogue n'ont pas de rayon de raccordement renseigné
+        # (ex. "C 100 x 10.8"), donc pas exigé ici non plus.
+        require("b", "tw", "tf", "IW", "iy", "iz", "ym")
+        if not cs.is_angle:
+            require("d", "Wpl_y", "Wpl_z", "Sw")
+    elif section_type == "O":
+        require("t", "Wpl_y", "Wpl_z")
+        if not cs.is_circular:
+            require("b")
+    elif section_type == "X":
+        if not cs.is_circular:
+            require("b")
+
+    if missing:
+        raise ValueError(
+            f"Section personnalisée {section_type} : champ(s) manquant(s) — "
+            f"{', '.join(missing)}"
+        )
+
+    sec = cs.model_dump()
+    if section_type == "U":
+        # Le catalogue U nomme cette colonne "Sw_w" (pas "Sw", contrairement
+        # à H) — CustomSection réutilise un seul champ "Sw" pour les deux
+        # familles, par simplicité côté formulaire.
+        sec["Sw_w"] = sec.pop("Sw")
+    sec["cat_type"] = section_type
+    sec["designation"] = rc.designation
+    return sec

@@ -24,7 +24,7 @@ import math
 
 import pandas as pd
 
-from ..catalogue import get_section
+from ..catalogue import resolve_section
 from ..models import AllRatios, ElementLCResult, MaterialConfig, RCConfig
 from ..ec3.utils import epsilon, gamma_M
 from ..ec3.classification import section_class_O, net_areas
@@ -47,7 +47,7 @@ _SQRT3 = math.sqrt(3.0)
 # ─── Pré-calcul (une fois par RC) ────────────────────────────────────────────
 
 def precompute(rc: RCConfig, mat: MaterialConfig) -> dict:
-    sec   = get_section("O", rc.designation)
+    sec   = resolve_section(rc)
     fy    = mat.fy; E = mat.E; G = mat.G
     is_ss = (mat.steel_type == "inox")
     gM0, gM1, gM2 = gamma_M(is_ss)

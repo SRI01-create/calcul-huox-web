@@ -2,6 +2,7 @@
 //
 // Champs édités (cf. backend/app/models.py — RCConfig) :
 //   section_type, designation, material_number, manual_section_class (Phase 27),
+//   custom_section (Phase 32 — section personnalisée, hors catalogue),
 //   L, cry, crz, buckling_curve_y, buckling_curve_z,
 //   bc_steel_family/bc_u_shape/bc_u_material/bc_o_shape (guide, Phase 29 — indicatif),
 //   crT (U uniquement — sans effet pour H), Lm, ltb_config, zG (H/U),
@@ -12,19 +13,31 @@
 // désignation choisie. Le flag [PRS] (+ forme U/L, O/□, X/■●) reste affiché
 // dans l'aperçu de section ci-dessous (ShapeFlags) à titre informatif.
 //
+// Phase 32 : section personnalisée. rc.custom_section === null → catalogue
+// (comportement historique, inchangé) ; objet CustomSection → formulaire de
+// saisie manuelle (CustomSectionForm ci-dessous). ClassificationControl
+// continue de fonctionner en mode personnalisé (l'aperçu auto échoue
+// silencieusement — pas de désignation catalogue — mais le forçage manuel
+// de la classe reste pleinement utilisable). BucklingCurveGuide fonctionne
+// aussi en mode personnalisé : is_welded/h/b/tf/t viennent alors du
+// formulaire au lieu d'une recherche catalogue (cf. BucklingCurveGuide).
+//
 // Le rc_number n'est pas modifiable (identifiant stable côté store).
 
 import React, { useEffect, useRef, useState } from 'react'
-import { useStore } from '../store'
-import { fetchSections, fetchSectionProperties, fetchSectionClassification, fetchBucklingCurveSuggestion } from '../api'
+import { useStore, createDefaultCustomSection, CM2_TO_M2, CM4_TO_M4, CM3_TO_M3, CM6_TO_M6 } from '../store'
+import {
+  fetchSections, fetchSectionProperties, fetchSectionClassification,
+  fetchBucklingCurveSuggestion, fetchCustomSectionSuggestion,
+} from '../api'
 
 // ─── Référentiels d'options ───────────────────────────────────────────────────
 
 const SECTION_TYPES = [
-  { value: 'H', label: 'H — Profilés I/H (IPE, HEA, HEB, PRS…)' },
-  { value: 'U', label: 'U — Profilés U et cornières (UPN, UPE, L…)' },
-  { value: 'O', label: 'O — Tubes creux (Tca, Tre, Tci)' },
-  { value: 'X', label: 'X — Sections pleines (Pca, Pre, Pci)' },
+  { value: 'H' },
+  { value: 'U' },
+  { value: 'O' },
+  { value: 'X' },
 ]
 
 // α (Table 6.1 EC3) rappelé pour aider au choix de la courbe.
@@ -112,6 +125,55 @@ function SelectField({ label, value, onChange, options }) {
           <option key={o.value} value={o.value}>{o.label}</option>
         ))}
       </select>
+    </label>
+  )
+}
+
+function CheckboxField({ label, checked, onChange }) {
+  return (
+    <label className="flex items-center gap-2 text-sm text-gray-700 select-none">
+      <input
+        type="checkbox"
+        className="h-4 w-4 rounded border-gray-300 text-slate-600 focus:ring-slate-400"
+        checked={!!checked}
+        onChange={(e) => onChange(e.target.checked)}
+      />
+      {label}
+    </label>
+  )
+}
+
+/**
+ * Champ numérique avec suggestion de calcul automatique (Phase 32) — même
+ * principe que le guide de courbes de flambement (Phase 29) : la
+ * suggestion n'est qu'une aide affichée, jamais appliquée toute seule.
+ * `suggestion` est déjà formaté en texte prêt à afficher (unité comprise).
+ */
+function SuggestField({ label, unit, value, onChange, suggestion, onApply, step = 'any' }) {
+  return (
+    <label className="flex flex-col text-sm">
+      <span className="text-gray-600 mb-1">
+        {label} {unit && <span className="text-gray-400">({unit})</span>}
+      </span>
+      <input
+        type="number"
+        className="border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-slate-400"
+        value={value}
+        step={step}
+        onChange={(e) => onChange(e.target.value)}
+      />
+      {suggestion != null && (
+        <span className="mt-1 text-[11px] text-slate-500">
+          Suggestion : {suggestion}{' '}
+          <button
+            type="button"
+            className="text-slate-700 underline hover:text-slate-900"
+            onClick={onApply}
+          >
+            Appliquer
+          </button>
+        </span>
+      )}
     </label>
   )
 }
@@ -262,6 +324,174 @@ function ShapeFlags({ sectionType, isWelded, isAngle, isCircular }) {
   )
 }
 
+// ─── Section personnalisée (hors catalogue) — Phase 32 ──────────────────────
+//
+// Un seul formulaire pour les 4 familles ; les champs affichés dépendent de
+// sectionType et de is_angle/is_circular (mêmes conventions que le
+// catalogue : pas de "b" pour une section ronde, pas de "d"/"Wpl" pour une
+// cornière). Les champs marqués d'une suggestion (SuggestField) appellent
+// /api/custom-section/suggest à chaque frappe (débounce 300 ms) — l'aide
+// est purement indicative, jamais appliquée sans un clic explicite sur
+// "Appliquer" (même principe que le guide de courbes de flambement).
+//
+// Unités affichées/saisies : mm pour les dimensions et pour iy/iz/ym/ys,
+// cm²/cm⁴/cm³/cm⁶ pour les caractéristiques de section — converties vers
+// l'unité interne du catalogue (m²/m⁴/m³/m⁶) uniquement à l'envoi à l'API
+// (cf. store.js::normalizeCustomSection) ou avant un appel de suggestion.
+
+function CustomSectionForm({ sectionType, cs, onChange, ys, onYsChange }) {
+  const [suggestions, setSuggestions] = useState({})
+  const debounceRef = useRef(null)
+
+  const num = (v) => (v === '' || v === null || v === undefined ? undefined : Number(v))
+
+  useEffect(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current)
+    debounceRef.current = setTimeout(() => {
+      const Aval = num(cs.A), Iyval = num(cs.Iy), Izval = num(cs.Iz)
+      const raw = {
+        is_circular: !!cs.is_circular,
+        h: num(cs.h), b: num(cs.b), tw: num(cs.tw), tf: num(cs.tf), r: num(cs.r),
+        ys: num(ys),
+        A: Aval !== undefined ? Aval * CM2_TO_M2 : undefined,
+        Iy: Iyval !== undefined ? Iyval * CM4_TO_M4 : undefined,
+        Iz: Izval !== undefined ? Izval * CM4_TO_M4 : undefined,
+      }
+      fetchCustomSectionSuggestion(sectionType, raw)
+        .then(setSuggestions)
+        .catch(() => setSuggestions({}))
+    }, 300)
+    return () => clearTimeout(debounceRef.current)
+  }, [sectionType, cs.is_circular, cs.h, cs.b, cs.tw, cs.tf, cs.r, ys, cs.A, cs.Iy, cs.Iz])
+
+  const set = (field) => (v) => onChange({ [field]: v })
+
+  const suggestDisplay = (field, unitConv) => {
+    if (suggestions[field] == null) return null
+    const v = unitConv ? suggestions[field] / unitConv : suggestions[field]
+    return Math.round(v * 100) / 100
+  }
+  const applySuggestion = (field, unitConv) => () => {
+    const v = suggestDisplay(field, unitConv)
+    if (v != null) onChange({ [field]: String(v) })
+  }
+
+  const isAngle = sectionType === 'U' && cs.is_angle
+  const isX = sectionType === 'X'
+
+  return (
+    <div className="border border-dashed border-slate-300 rounded-lg p-4 mt-3 bg-slate-50/50">
+      <div className="flex items-center gap-4 mb-3">
+        <CheckboxField label="Section soudée (PRS)" checked={cs.is_welded}
+          onChange={(v) => onChange({ is_welded: v })} />
+        {sectionType === 'U' && (
+          <CheckboxField label="Cornière" checked={cs.is_angle}
+            onChange={(v) => onChange({ is_angle: v })} />
+        )}
+        {(sectionType === 'O' || isX) && (
+          <CheckboxField label="Section ronde" checked={cs.is_circular}
+            onChange={(v) => onChange({ is_circular: v })} />
+        )}
+      </div>
+
+      {/* Dimensions ------------------------------------------------------ */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+        <NumField label="h" unit="mm" value={cs.h} min="0" onChange={set('h')} />
+        {!cs.is_circular && (
+          <NumField label="b" unit="mm" value={cs.b} min="0" onChange={set('b')} />
+        )}
+        {sectionType === 'O' && (
+          <NumField label="t" unit="mm" value={cs.t} min="0" onChange={set('t')} />
+        )}
+        {(sectionType === 'H' || sectionType === 'U') && (
+          <>
+            <NumField label="tw" unit="mm" value={cs.tw} min="0" onChange={set('tw')} />
+            <NumField label="tf" unit="mm" value={cs.tf} min="0" onChange={set('tf')} />
+            <NumField label="r" unit="mm" value={cs.r} min="0" onChange={set('r')} />
+            {!isAngle && (
+              <SuggestField label="d" unit="mm" value={cs.d} onChange={set('d')}
+                suggestion={suggestDisplay('d')} onApply={applySuggestion('d')} />
+            )}
+          </>
+        )}
+      </div>
+
+      {/* Caractéristiques de section --------------------------------------- */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 mt-3">
+        {isX ? (
+          <>
+            <SuggestField label="A" unit="cm²" value={cs.A} onChange={set('A')}
+              suggestion={suggestDisplay('A', CM2_TO_M2)} onApply={applySuggestion('A', CM2_TO_M2)} />
+            <SuggestField label="Iy" unit="cm⁴" value={cs.Iy} onChange={set('Iy')}
+              suggestion={suggestDisplay('Iy', CM4_TO_M4)} onApply={applySuggestion('Iy', CM4_TO_M4)} />
+            <SuggestField label="Iz" unit="cm⁴" value={cs.Iz} onChange={set('Iz')}
+              suggestion={suggestDisplay('Iz', CM4_TO_M4)} onApply={applySuggestion('Iz', CM4_TO_M4)} />
+            <SuggestField label="Wel,y" unit="cm³" value={cs.Wel_y} onChange={set('Wel_y')}
+              suggestion={suggestDisplay('Wel_y', CM3_TO_M3)} onApply={applySuggestion('Wel_y', CM3_TO_M3)} />
+            <SuggestField label="Wel,z" unit="cm³" value={cs.Wel_z} onChange={set('Wel_z')}
+              suggestion={suggestDisplay('Wel_z', CM3_TO_M3)} onApply={applySuggestion('Wel_z', CM3_TO_M3)} />
+            <NumField label="Wpl,y" unit="cm³" value={cs.Wpl_y} onChange={set('Wpl_y')} />
+            <NumField label="Wpl,z" unit="cm³" value={cs.Wpl_z} onChange={set('Wpl_z')} />
+            <NumField label="It" unit="cm⁴" value={cs.It} onChange={set('It')} />
+          </>
+        ) : (
+          <>
+            <NumField label="A" unit="cm²" value={cs.A} onChange={set('A')} />
+            <NumField label="Iy" unit="cm⁴" value={cs.Iy} onChange={set('Iy')} />
+            <NumField label="Iz" unit="cm⁴" value={cs.Iz} onChange={set('Iz')} />
+            <NumField label="Wel,y" unit="cm³" value={cs.Wel_y} onChange={set('Wel_y')} />
+            <NumField label="Wel,z" unit="cm³" value={cs.Wel_z} onChange={set('Wel_z')} />
+            {!isAngle && (
+              <>
+                <NumField label="Wpl,y" unit="cm³" value={cs.Wpl_y} onChange={set('Wpl_y')} />
+                <NumField label="Wpl,z" unit="cm³" value={cs.Wpl_z} onChange={set('Wpl_z')} />
+              </>
+            )}
+            <NumField label="It" unit="cm⁴" value={cs.It} onChange={set('It')} />
+            {(sectionType === 'H' || sectionType === 'U') && (
+              <NumField label="IW" unit="cm⁶" value={cs.IW} onChange={set('IW')} />
+            )}
+          </>
+        )}
+      </div>
+
+      {/* Aires de cisaillement + spécifique U (iy/iz/ym) ------------------- */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 mt-3">
+        <SuggestField label="Av,y" unit="cm²" value={cs.Av_y} onChange={set('Av_y')}
+          suggestion={suggestDisplay('Av_y', CM2_TO_M2)} onApply={applySuggestion('Av_y', CM2_TO_M2)} />
+        <SuggestField label="Av,z" unit="cm²" value={cs.Av_z} onChange={set('Av_z')}
+          suggestion={suggestDisplay('Av_z', CM2_TO_M2)} onApply={applySuggestion('Av_z', CM2_TO_M2)} />
+        {sectionType === 'U' && (
+          <>
+            <SuggestField label="iy" unit="mm" value={cs.iy} onChange={set('iy')}
+              suggestion={suggestDisplay('iy')} onApply={applySuggestion('iy')} />
+            <SuggestField label="iz" unit="mm" value={cs.iz} onChange={set('iz')}
+              suggestion={suggestDisplay('iz')} onApply={applySuggestion('iz')} />
+            <NumField label="ym" unit="mm" value={cs.ym} onChange={set('ym')} />
+            <NumField label="ys" unit="mm" value={ys} onChange={onYsChange} />
+          </>
+        )}
+      </div>
+
+      {/* Moment sectoriel (H : Sw · U : Sw,w) — a besoin de ys ci-dessus --- */}
+      {(sectionType === 'H' || sectionType === 'U') && (
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 mt-3">
+          {!isAngle && (
+            <SuggestField label={sectionType === 'H' ? 'Sw' : 'Sw,w'} unit="cm⁴" value={cs.Sw} onChange={set('Sw')}
+              suggestion={suggestDisplay('Sw', CM4_TO_M4)} onApply={applySuggestion('Sw', CM4_TO_M4)} />
+          )}
+        </div>
+      )}
+
+      {sectionType === 'U' && (
+        <p className="mt-3 text-xs text-gray-400">
+          "ys" ne sert qu'à calculer la suggestion de Sw,w, jamais utilisé par le calcul lui-même.
+        </p>
+      )}
+    </div>
+  )
+}
+
 // ─── Classe de section (auto-calculée + forçage manuel — Phase 27) ───────────
 //
 // La classe (1 à 4) est déterminée de façon conservative (compression pure,
@@ -343,9 +573,13 @@ function BucklingCurveGuide({ rc, set }) {
   const [suggestion, setSuggestion] = useState(null)
   const [error, setError] = useState(null)
 
+  const cs = rc.custom_section
+
   // Choix nécessaires et complets pour ce type de section → prêts à suggérer.
   // Phase 31 : la fabrication (laminé/PRS soudé) n'est plus un choix utilisateur
-  // — elle est déduite par le backend depuis is_welded (catalogue), pour H et U.
+  // — elle est déduite par le backend depuis is_welded, pour H et U.
+  // Phase 32 : en section personnalisée, is_welded/h/b/tf/t viennent du
+  // formulaire (cs) au lieu d'une recherche catalogue.
   let ready = false
   let choices = {}
   if (rc.section_type === 'H') {
@@ -360,6 +594,16 @@ function BucklingCurveGuide({ rc, set }) {
     choices = { steelFamily: rc.bc_steel_family, oShape: rc.bc_o_shape }
   } else {
     ready = true // X : aucun choix, résultat fixe
+  }
+  if (cs) {
+    choices = {
+      ...choices,
+      isWelded: !!cs.is_welded,
+      h: cs.h === '' ? undefined : Number(cs.h),
+      b: cs.b === '' ? undefined : Number(cs.b),
+      tf: cs.tf === '' ? undefined : Number(cs.tf),
+      t: cs.t === '' ? undefined : Number(cs.t),
+    }
   }
 
   useEffect(() => {
@@ -506,115 +750,159 @@ function RCNumberField({ value, onChange }) {
 export default function RCRow({ rc }) {
   const materials = useStore((s) => s.materials)
   const updateRC = useStore((s) => s.updateRC)
-  const removeRC = useStore((s) => s.removeRC)
-  const [expanded, setExpanded] = useState(true)
 
   const set = (patch) => updateRC(rc._uid, patch)
   const material = materials.find((m) => m.material_number === rc.material_number)
 
   const isHU = rc.section_type === 'H' || rc.section_type === 'U'
   const isU = rc.section_type === 'U'
+  const isCustom = rc.custom_section != null
   const ltbIsPredefined = /^[1-6]$/.test(String(rc.ltb_config).trim())
 
   const handleSectionTypeChange = (newType) => {
-    // La désignation appartient au catalogue de l'ancien type → réinitialiser.
-    set({ section_type: newType, designation: '' })
+    // La désignation et la section personnalisée appartiennent au type
+    // précédent (champs différents selon la famille) → réinitialiser.
+    set({ section_type: newType, designation: '', custom_section: null })
+  }
+
+  const toggleCustom = () => {
+    if (isCustom) {
+      set({ custom_section: null })
+    } else {
+      set({
+        custom_section: createDefaultCustomSection(),
+        designation: rc.designation || 'Section personnalisée',
+      })
+    }
   }
 
   return (
     <div className="bg-white border border-gray-200 rounded-lg shadow-sm">
-      {/* En-tête ------------------------------------------------------------ */}
-      <div className="flex flex-wrap items-center gap-3 p-4">
-        <RCNumberField value={rc.rc_number} onChange={(v) => set({ rc_number: v })} />
+      <div className="px-4 pt-4 pb-4">
 
-        <div className="w-48 shrink-0">
-          <SelectField
-            label="Type de section"
-            value={rc.section_type}
-            onChange={handleSectionTypeChange}
-            options={SECTION_TYPES.map(({ value, label }) => ({ value, label: value }))}
-          />
-        </div>
+        {/* RC et section */}
+        <Group title="RC et section">
+          <div className="col-span-2 sm:col-span-3 lg:col-span-4 flex flex-wrap items-end gap-3">
+            <RCNumberField value={rc.rc_number} onChange={(v) => set({ rc_number: v })} />
+            <div className="w-48">
+              <SelectField
+                label="Type de section"
+                value={rc.section_type}
+                onChange={handleSectionTypeChange}
+                options={SECTION_TYPES.map(({ value }) => ({ value, label: value }))}
+              />
+            </div>
+          </div>
 
-        <div className="flex-1 min-w-[14rem]">
-          <SectionPicker
-            sectionType={rc.section_type}
-            designation={rc.designation}
-            onChange={(des) => set({ designation: des })}
-          />
-        </div>
+          <div className="col-span-2 sm:col-span-3 lg:col-span-4 flex flex-wrap items-end gap-3">
+            <div className="flex-1 min-w-[14rem]">
+              {isCustom ? (
+                <label className="flex flex-col text-sm">
+                  <span className="text-gray-600 mb-1">Nom (section personnalisée)</span>
+                  <input
+                    type="text"
+                    className="border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-slate-400"
+                    value={rc.designation}
+                    onChange={(e) => set({ designation: e.target.value })}
+                  />
+                </label>
+              ) : (
+                <SectionPicker
+                  sectionType={rc.section_type}
+                  designation={rc.designation}
+                  onChange={(des) => set({ designation: des })}
+                />
+              )}
+            </div>
 
-        <div className="w-56 shrink-0">
-          <SelectField
-            label="Matériau"
-            value={rc.material_number}
-            onChange={(v) => set({ material_number: Number(v) })}
-            options={materials.map((m) => ({
-              value: m.material_number,
-              label: `${m.designation} (n°${m.material_number})`,
-            }))}
-          />
-        </div>
+            <button
+              type="button"
+              onClick={toggleCustom}
+              className="text-xs px-2 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-50 shrink-0"
+              title={isCustom ? 'Revenir au catalogue' : 'Définir une section hors catalogue'}
+            >
+              {isCustom ? '↩ Catalogue' : '+ Section personnalisée'}
+            </button>
+          </div>
+        </Group>
 
-        <div className="w-40 shrink-0">
-          <ClassificationControl
-            sectionType={rc.section_type}
-            designation={rc.designation}
-            fy={material?.fy}
-            E={material?.E}
-            steelType={material?.steel_type}
-            manualClass={rc.manual_section_class}
-            onManualClassChange={(v) => set({ manual_section_class: v })}
-          />
-        </div>
+        {/* Section personnalisée (Phase 32) */}
+        {isCustom && (
+          <div className="border-t border-gray-100 pt-3 mt-3">
+            <CustomSectionForm
+              sectionType={rc.section_type}
+              cs={rc.custom_section}
+              onChange={(patch) => set({ custom_section: { ...rc.custom_section, ...patch } })}
+              ys={rc.custom_section_ys}
+              onYsChange={(v) => set({ custom_section_ys: v })}
+            />
+          </div>
+        )}
 
-        <button
-          type="button"
-          onClick={() => setExpanded((e) => !e)}
-          className="text-gray-400 hover:text-slate-700 text-sm self-end pb-1"
-          title={expanded ? 'Réduire' : 'Développer les paramètres'}
-        >
-          {expanded ? '▾ Paramètres' : '▸ Paramètres'}
-        </button>
+        {/* Matériau et classe */}
+        <Group title="Matériau et classe">
+          <div className="w-56">
+            <SelectField
+              label="Matériau"
+              value={rc.material_number}
+              onChange={(v) => set({ material_number: Number(v) })}
+              options={materials.map((m) => ({
+                value: m.material_number,
+                label: `${m.designation} (n°${m.material_number})`,
+              }))}
+            />
+          </div>
 
-        <button
-          type="button"
-          onClick={() => removeRC(rc._uid)}
-          className="text-gray-400 hover:text-red-600 text-lg leading-none self-end pb-1.5"
-          title="Supprimer ce RC"
-        >
-          ×
-        </button>
-      </div>
+          <div className="w-40">
+            <ClassificationControl
+              sectionType={rc.section_type}
+              designation={rc.designation}
+              fy={material?.fy}
+              E={material?.E}
+              steelType={material?.steel_type}
+              manualClass={rc.manual_section_class}
+              onManualClassChange={(v) => set({ manual_section_class: v })}
+            />
+          </div>
+        </Group>
 
-      {/* Type de section sélectionné — légende */}
-      <div className="px-4 -mt-2 pb-1 text-xs text-gray-400">
-        {SECTION_TYPES.find((t) => t.value === rc.section_type)?.label}
-      </div>
+        {/* Flambement par flexion (toutes sections) */}
+        <Group title="Flambement par flexion">
+          <div className="col-span-2 sm:col-span-3 lg:col-span-4 flex flex-wrap gap-3">
+            <div className="w-28">
+              <NumField label="L" unit="m" value={rc.L} step="0.01" min="0.001"
+                onChange={(v) => set({ L: v })} />
+            </div>
+          </div>
 
-      {/* Détails -------------------------------------------------------------- */}
-      {expanded && (
-        <div className="px-4 pb-4">
+          <div className="col-span-2 sm:col-span-3 lg:col-span-4 flex flex-wrap gap-3">
+            <div className="w-28">
+              <NumField label="cry" value={rc.cry} step="0.05" min="0"
+                onChange={(v) => set({ cry: v })} />
+            </div>
+            <div className="w-28">
+              <NumField label="crz" value={rc.crz} step="0.05" min="0"
+                onChange={(v) => set({ crz: v })} />
+            </div>
+          </div>
 
-          {/* Flambement par flexion (toutes sections) */}
-          <Group title="Flambement par flexion — §6.3.1">
-            <NumField label="L" unit="m" value={rc.L} step="0.01" min="0.001"
-              onChange={(v) => set({ L: v })} />
-            <NumField label="cry" value={rc.cry} step="0.05" min="0"
-              onChange={(v) => set({ cry: v })} />
-            <NumField label="crz" value={rc.crz} step="0.05" min="0"
-              onChange={(v) => set({ crz: v })} />
-            <div />
-            <SelectField label="Courbe y-y" value={rc.buckling_curve_y}
-              onChange={(v) => set({ buckling_curve_y: v })} options={BUCKLING_CURVES} />
-            <SelectField label="Courbe z-z" value={rc.buckling_curve_z}
-              onChange={(v) => set({ buckling_curve_z: v })} options={BUCKLING_CURVES} />
+          <div className="col-span-2 sm:col-span-3 lg:col-span-4 flex flex-wrap items-start gap-3">
+            <div className="w-40">
+              <SelectField label="Courbe y-y" value={rc.buckling_curve_y}
+                onChange={(v) => set({ buckling_curve_y: v })} options={BUCKLING_CURVES} />
+            </div>
+            <div className="w-40">
+              <SelectField label="Courbe z-z" value={rc.buckling_curve_z}
+                onChange={(v) => set({ buckling_curve_z: v })} options={BUCKLING_CURVES} />
+            </div>
             <BucklingCurveGuide rc={rc} set={set} />
-          </Group>
+          </div>
+        </Group>
+
 
           {/* Flambement par torsion (U uniquement — crT sans effet pour H, cf. engine_H.py) */}
           {isU && (
-            <Group title="Flambement par torsion / flexion-torsion — §6.3.1.4">
+            <Group title="Flambement par torsion / flexion-torsion">
               <NumField label="crT" value={rc.crT} step="0.05" min="0"
                 onChange={(v) => set({ crT: v })} />
             </Group>
@@ -622,7 +910,7 @@ export default function RCRow({ rc }) {
 
           {/* Déversement (H/U uniquement) */}
           {isHU && (
-            <Group title="Déversement — §6.3.2, Annexe F">
+            <Group title="Déversement">
               <NumField label="Lm" unit="m" value={rc.Lm} step="0.01" min="0.001"
                 onChange={(v) => set({ Lm: v })} />
               <NumField label="zG" unit="mm" value={rc.zG} step="1"
@@ -678,8 +966,7 @@ export default function RCRow({ rc }) {
               </>
             )}
           </Group>
-        </div>
-      )}
+      </div>
     </div>
   )
 }

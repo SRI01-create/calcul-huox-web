@@ -90,8 +90,15 @@ export async function fetchSectionClassification(catType, designation, { fy, E, 
  * @returns {Promise<{cat_type: string, designation: string, curve_y: string, curve_z: string}>}
  * @throws {AxiosError} 422 si un choix requis pour ce type manque (message dans error.response.data.detail)
  */
+/**
+ * Suggestion de courbes de flambement (Phase 29). `choices` accepte en plus,
+ * pour une section personnalisée (Phase 32, pas de désignation catalogue) :
+ * isWelded / h / b / tf / t — fournis directement au lieu d'une recherche
+ * catalogue (cf. main.py::get_buckling_curve_suggestion). Non fournis pour
+ * une section catalogue → comportement historique inchangé.
+ */
 export async function fetchBucklingCurveSuggestion(catType, designation, choices = {}) {
-  const { steelFamily, uShape, uMaterial, oShape } = choices
+  const { steelFamily, uShape, uMaterial, oShape, isWelded, h, b, tf, t } = choices
   const { data } = await apiClient.get(
     `/buckling-curve/${catType}/${encodeURIComponent(designation)}`,
     {
@@ -100,9 +107,34 @@ export async function fetchBucklingCurveSuggestion(catType, designation, choices
         u_shape: uShape,
         u_material: uMaterial,
         o_shape: oShape,
+        is_welded: isWelded,
+        h, b, tf, t,
       },
     }
   )
+  return data
+}
+
+/**
+ * Suggestions de calcul pour une section personnalisée (Phase 32) — mêmes
+ * formules simples que formules_prop_sections.docx, purement indicatives
+ * (aucune ne participe au calcul réel). Endpoint permissif : ne renvoie que
+ * les suggestions dont les dépendances sont déjà renseignées dans `raw` —
+ * pas d'erreur pour un champ manquant, juste absent de la réponse.
+ *
+ * @param {'H'|'U'|'O'|'X'} sectionType
+ * @param {object} raw - sous-ensemble pertinent selon sectionType, unités
+ *        internes (mm pour les dimensions et ys, m²/m⁴ pour A/Iy/Iz) :
+ *        { is_circular?, h?, b?, tw?, tf?, r?, ys?, A?, Iy?, Iz? }
+ * @returns {Promise<object>} champs calculables présents uniquement,
+ *        ex. { d, Sw, Av_y, Av_z } pour H, { A, Iy, Iz, Wel_y, Wel_z,
+ *        Av_y, Av_z } pour X
+ */
+export async function fetchCustomSectionSuggestion(sectionType, raw = {}) {
+  const { data } = await apiClient.post('/custom-section/suggest', {
+    section_type: sectionType,
+    ...raw,
+  })
   return data
 }
 

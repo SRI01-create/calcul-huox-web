@@ -70,12 +70,8 @@ export default function MaterialRow({ material, canRemove }) {
   return (
     <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
       <div className="flex items-center justify-between mb-3">
-        <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-slate-700 text-white text-sm font-semibold">
-          {num}
-        </span>
-
         <select
-          className="border border-gray-300 rounded px-2 py-1 text-sm ml-3"
+          className="border border-gray-300 rounded px-2 py-1 text-sm"
           value=""
           onChange={(e) => applyPreset(e.target.value)}
         >
@@ -92,7 +88,7 @@ export default function MaterialRow({ material, canRemove }) {
           onClick={handleRemove}
           disabled={!canRemove}
           title={canRemove ? 'Supprimer ce matériau' : 'Au moins un matériau requis'}
-          className="text-gray-400 hover:text-red-600 disabled:opacity-30 disabled:hover:text-gray-400 text-lg leading-none px-2"
+          className="text-gray-400 hover:text-red-600 disabled:opacity-30 disabled:hover:text-gray-400 text-xl leading-none px-2"
         >
           ×
         </button>
@@ -131,12 +127,6 @@ export default function MaterialRow({ material, canRemove }) {
         <NumField label="G" unit="MPa" value={material.G} step={100} min={0}
           onChange={(v) => set({ G: v })} />
       </div>
-
-      {material.steel_type === 'inox' && (
-        <p className="mt-2 text-xs text-gray-500">
-          Inox : γM0 = 1.10 (au lieu de 1.00) — appliqué automatiquement par le moteur de calcul.
-        </p>
-      )}
     </div>
   )
 }

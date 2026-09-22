@@ -80,6 +80,14 @@ export function createDefaultRC(rcNumber, materialNumber) {
     material_number: materialNumber,
     manual_section_class: null, // '1'|'2'|'3'|'4' si forcée par l'utilisateur, sinon null (auto)
 
+    // Section personnalisée (Phase 32) — null = catalogue (comportement
+    // historique) ; objet CustomSection (cf. RCRow.jsx) = section saisie à
+    // la main. `custom_section_ys` est un champ d'appoint (mm), utilisé
+    // uniquement pour la suggestion de Sw,w (U) — jamais envoyé au moteur
+    // de calcul, ignoré sans erreur côté API s'il l'était.
+    custom_section: null,
+    custom_section_ys: '',
+
     // Flambement par flexion
     L: 1.0,
     cry: 1.0,
@@ -114,11 +122,45 @@ export function createDefaultRC(rcNumber, materialNumber) {
   }
 }
 
+/**
+ * Section personnalisée vide (Phase 32) — un seul gabarit pour les 4
+ * familles (mêmes champs que backend/app/models.py::CustomSection) ;
+ * RCRow.jsx n'affiche que le sous-ensemble pertinent pour section_type.
+ * Valeurs '' plutôt que null : ce sont des champs de formulaire édités en
+ * chaîne, comme le reste de RCConfig (cf. normalizeCustomSection pour la
+ * conversion finale).
+ */
+export function createDefaultCustomSection() {
+  return {
+    is_welded: false, is_angle: false, is_circular: false,
+    h: '', b: '', tw: '', tf: '', r: '', d: '', t: '',
+    A: '', Iy: '', Iz: '', Wel_y: '', Wel_z: '', Wpl_y: '', Wpl_z: '',
+    It: '', IW: '', Sw: '', Av_y: '', Av_z: '',
+    iy: '', iz: '', ym: '',
+  }
+}
+
 // ─── Champs numériques (pour buildPayload) ───────────────────────────────────
 
 const RC_INT_FIELDS = ['material_number']
 const RC_FLOAT_FIELDS = ['L', 'cry', 'crz', 'crT', 'Lm', 'zG', 'kr']
 const RC_NULLABLE_FLOAT_FIELDS = ['A_trou', 'Af_trou']
+
+// Section personnalisée (Phase 32) : dimensions/décalages en mm (aucune
+// conversion), caractéristiques de section saisies dans des unités "de
+// bureau d'études" plus lisibles que l'unité interne du catalogue —
+// converties ici, une seule fois, avant l'envoi à l'API. L'unité interne
+// (cf. catalogue.py) reste m²/m⁴/m³/m⁶ ; l'affichage/la saisie restent
+// toujours en cm²/cm⁴/cm³/cm⁶ dans le store et dans RCRow.jsx.
+const CUSTOM_SECTION_MM_FIELDS = ['h', 'b', 'tw', 'tf', 'r', 'd', 't', 'iy', 'iz', 'ym']
+export const CM2_TO_M2 = 1e-4   // A, Av_y, Av_z
+export const CM4_TO_M4 = 1e-8   // Iy, Iz, It, Sw
+export const CM3_TO_M3 = 1e-6   // Wel_y/z, Wpl_y/z
+export const CM6_TO_M6 = 1e-12  // IW
+const CUSTOM_SECTION_CM2_FIELDS = ['A', 'Av_y', 'Av_z']
+const CUSTOM_SECTION_CM4_FIELDS = ['Iy', 'Iz', 'It', 'Sw']
+const CUSTOM_SECTION_CM3_FIELDS = ['Wel_y', 'Wel_z', 'Wpl_y', 'Wpl_z']
+const CUSTOM_SECTION_CM6_FIELDS = ['IW']
 
 const MAT_INT_FIELDS = ['material_number']
 const MAT_FLOAT_FIELDS = ['fy', 'fu', 'E', 'G']
@@ -135,12 +177,34 @@ function toNumber(v) {
 }
 
 /**
+ * Normalise une section personnalisée avant envoi à l'API : chaînes → floats,
+ * champs vides → null, conversion cm²/cm⁴/cm³/cm⁶ → m²/m⁴/m³/m⁶ (unité
+ * interne du catalogue, cf. commentaire ci-dessus). `custom_section_helpers`
+ * (ex. ys, utilisé uniquement pour la suggestion de Sw,w) n'est pas un champ
+ * de CustomSection — il reste au niveau du RC, ignoré sans erreur côté API.
+ */
+function normalizeCustomSection(cs) {
+  if (!cs) return null
+  const out = { ...cs }
+  out.is_welded = !!out.is_welded
+  out.is_angle = !!out.is_angle
+  out.is_circular = !!out.is_circular
+  for (const f of CUSTOM_SECTION_MM_FIELDS) out[f] = isEmpty(out[f]) ? null : toNumber(out[f])
+  for (const f of CUSTOM_SECTION_CM2_FIELDS) out[f] = isEmpty(out[f]) ? null : toNumber(out[f]) * CM2_TO_M2
+  for (const f of CUSTOM_SECTION_CM4_FIELDS) out[f] = isEmpty(out[f]) ? null : toNumber(out[f]) * CM4_TO_M4
+  for (const f of CUSTOM_SECTION_CM3_FIELDS) out[f] = isEmpty(out[f]) ? null : toNumber(out[f]) * CM3_TO_M3
+  for (const f of CUSTOM_SECTION_CM6_FIELDS) out[f] = isEmpty(out[f]) ? null : toNumber(out[f]) * CM6_TO_M6
+  return out
+}
+
+/**
  * Normalise un RCConfig avant envoi à l'API :
  *   - rc_number : chaîne (trim) — voir RCConfig.rc_number (Phase 28)
  *   - material_number → int
  *   - champs flottants → float
  *   - A_trou / Af_trou : '' ou null → null, sinon float
  *   - ltb_config : conservé en chaîne (trim) — accepté '1'-'6' ou Mcr numérique
+ *   - custom_section : cf. normalizeCustomSection ci-dessus (Phase 32)
  *   - _uid : identifiant technique interne, jamais envoyé à l'API
  */
 function normalizeRC(rc) {
@@ -153,6 +217,7 @@ function normalizeRC(rc) {
     out[f] = isEmpty(out[f]) ? null : toNumber(out[f])
   }
   if (typeof out.ltb_config === 'string') out.ltb_config = out.ltb_config.trim()
+  if (out.custom_section) out.custom_section = normalizeCustomSection(out.custom_section)
   return out
 }
 

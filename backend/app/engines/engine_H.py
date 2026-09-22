@@ -53,7 +53,7 @@ from typing import Optional
 
 import pandas as pd
 
-from ..catalogue import get_section
+from ..catalogue import resolve_section
 from ..models import (
     AllRatios, ElementLCResult, MaterialConfig, RCConfig,
 )
@@ -83,7 +83,7 @@ def precompute(rc: RCConfig, mat: MaterialConfig) -> dict:
     Calcule toutes les grandeurs indépendantes du cas de charge.
     Retourne un dict `pre` utilisé par _check_row().
     """
-    sec   = get_section(rc.section_type, rc.designation)
+    sec   = resolve_section(rc)
     fy    = mat.fy
     E     = mat.E
     G     = mat.G

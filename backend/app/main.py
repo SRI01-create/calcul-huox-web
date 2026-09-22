@@ -13,6 +13,8 @@ Endpoints
                                              auto-calculée (Phase 27)
     GET  /api/buckling-curve/{cat_type}/{designation} → suggestion de courbes
                                              de flambement (Phase 29)
+    POST /api/custom-section/suggest      → suggestions de calcul pour une
+                                             section personnalisée (Phase 32)
     POST /api/calculate                   → calcul complet EC3 (Format 1 + 2)
 
 POST /api/calculate — contrat multipart/form-data
@@ -61,7 +63,15 @@ from .ec3.classification import (
     section_class_H, section_class_U, section_class_O, section_class_X,
 )
 from .ec3.utils import epsilon
-from .models import CalculationRequest, CalculationResponse, SteelType
+from .custom_sections import (
+    clear_web_height_mm, radius_of_gyration_mm, shear_area_flange_m2,
+    shear_area_O_rect_m2, shear_area_O_round_m2, shear_area_web_m2,
+    solid_rect_properties, solid_round_properties,
+    warping_statical_moment_H_m4, warping_statical_moment_U_m4,
+)
+from .models import (
+    CalculationRequest, CalculationResponse, CustomSectionSuggestRequest, SteelType,
+)
 from .parsers import build_all_lc, parse_ele_file, parse_lc_file, split_axial
 from .results import build_response
 
@@ -226,6 +236,11 @@ def get_buckling_curve_suggestion(
     u_shape: Optional[str] = None,        # U — "profile" | "corniere"
     u_material: Optional[str] = None,     # U — "carbone" | "inox" | "inox_forme_a_froid"
     o_shape: Optional[str] = None,        # O carbone — "creuse_chaud" | "creuse_froid" | ...
+    is_welded: Optional[bool] = None,     # Phase 32 — section personnalisée : géométrie
+    h: Optional[float] = None,            # fournie directement (mm), pas de recherche
+    b: Optional[float] = None,            # catalogue. `is_welded` fourni = signal qu'on
+    tf: Optional[float] = None,           # est en section personnalisée, même si h/b/tf/t
+    t: Optional[float] = None,            # manquent encore (→ 422 informatif, cf. plus bas).
 ):
     """
     Suggestion de courbes de flambement (Phase 29) — transcription du document
@@ -242,7 +257,12 @@ def get_buckling_curve_suggestion(
     422 avec un message précisant exactement quel choix il manque.
 
     Phase 31 : la fabrication (H toujours ; U si u_material == "inox") n'est
-    plus un paramètre — elle est déduite de is_welded dans le catalogue.
+    plus un paramètre — elle est déduite de is_welded.
+
+    Phase 32 : pour une section personnalisée (pas de désignation catalogue),
+    le frontend fournit directement is_welded/h/b/tf/t au lieu de s'appuyer
+    sur une recherche catalogue — mêmes formules, même résultat, juste une
+    source différente pour la géométrie.
     """
     cat_type = cat_type.upper()
     if cat_type not in VALID_TYPES:
@@ -250,23 +270,30 @@ def get_buckling_curve_suggestion(
             status_code=404,
             detail=f"Type de catalogue invalide : '{cat_type}'. Valeurs : {VALID_TYPES}",
         )
-    try:
-        sec = get_section(cat_type, designation)
-    except KeyError as exc:
-        raise HTTPException(status_code=404, detail=str(exc)) from exc
 
-    fabrication = "S" if sec.get("is_welded") else "L"   # Phase 31 — déduit du catalogue
+    if is_welded is not None:
+        # Section personnalisée (Phase 32) : géométrie fournie par l'appelant.
+        sec_is_welded, sec_h, sec_b, sec_tf, sec_t = is_welded, h, b, tf, t
+    else:
+        try:
+            sec = get_section(cat_type, designation)
+        except KeyError as exc:
+            raise HTTPException(status_code=404, detail=str(exc)) from exc
+        sec_is_welded = sec.get("is_welded")
+        sec_h, sec_b, sec_tf, sec_t = sec.get("h"), sec.get("b"), sec.get("tf"), sec.get("t")
+
+    fabrication = "S" if sec_is_welded else "L"   # Phase 31 — déduit du catalogue ou saisi
 
     try:
         if cat_type == "H":
             curve_y, curve_z = suggest_curves_H(
-                steel_family, fabrication, sec["h"], sec["b"], sec["tf"],
+                steel_family, fabrication, sec_h, sec_b, sec_tf,
             )
         elif cat_type == "U":
             curve_y, curve_z = suggest_curves_U(u_shape, u_material, fabrication)
         elif cat_type == "O":
             curve_y, curve_z = suggest_curves_O(
-                steel_family, o_shape, sec["b"], sec["h"], sec["t"],
+                steel_family, o_shape, sec_b, sec_h, sec_t,
             )
         else:  # "X"
             curve_y, curve_z = suggest_curves_X()
@@ -277,6 +304,69 @@ def get_buckling_curve_suggestion(
         "cat_type": cat_type, "designation": designation,
         "curve_y": curve_y, "curve_z": curve_z,
     }
+
+
+@app.post("/api/custom-section/suggest", tags=["sections"])
+def suggest_custom_section_properties(req: CustomSectionSuggestRequest):
+    """
+    Suggestions de calcul automatique pour une section personnalisée
+    (Phase 32) — formules simples fournies par l'utilisateur
+    (formules_prop_sections.docx), volontairement approximatives (pas les
+    formules EC3 exactes avec congés de raccordement, coefficients de
+    cisaillement précis, etc.) : un choix assumé, pas une limite à corriger.
+
+    Purement indicatif, même principe que /api/buckling-curve/... : ne
+    modifie rien, le frontend affiche chaque suggestion avec un bouton
+    "Appliquer" que l'utilisateur peut ignorer. Cet endpoint ne participe
+    jamais au calcul lui-même.
+
+    Volontairement permissif : ne renvoie que les suggestions dont les
+    dépendances sont déjà renseignées (pas d'erreur 422 pour un champ
+    manquant — juste absent de la réponse).
+    """
+    r = req
+    out: dict = {}
+
+    if r.section_type == "H":
+        if r.h is not None and r.tf is not None and r.r is not None:
+            out["d"] = clear_web_height_mm(r.h, r.tf, r.r)
+        if r.b is not None and r.h is not None and r.tf is not None:
+            out["Sw"] = warping_statical_moment_H_m4(r.b, r.h, r.tf)
+        if r.b is not None and r.tf is not None:
+            out["Av_y"] = shear_area_flange_m2(r.b, r.tf)
+        if r.h is not None and r.tw is not None:
+            out["Av_z"] = shear_area_web_m2(r.h, r.tw)
+
+    elif r.section_type == "U":
+        if r.h is not None and r.tf is not None and r.r is not None:
+            out["d"] = clear_web_height_mm(r.h, r.tf, r.r)
+        if r.b is not None and r.h is not None and r.tf is not None and r.ys is not None:
+            out["Sw"] = warping_statical_moment_U_m4(r.b, r.h, r.tf, r.ys)
+        if r.b is not None and r.tf is not None:
+            out["Av_y"] = shear_area_flange_m2(r.b, r.tf)
+        if r.h is not None and r.tw is not None:
+            out["Av_z"] = shear_area_web_m2(r.h, r.tw)
+        if r.Iy is not None and r.A is not None:
+            out["iy"] = radius_of_gyration_mm(r.Iy, r.A)
+        if r.Iz is not None and r.A is not None:
+            out["iz"] = radius_of_gyration_mm(r.Iz, r.A)
+
+    elif r.section_type == "O":
+        if r.A is not None:
+            if r.is_circular:
+                av = shear_area_O_round_m2(r.A)
+                out["Av_y"] = out["Av_z"] = av
+            elif r.b is not None and r.h is not None:
+                out["Av_y"], out["Av_z"] = shear_area_O_rect_m2(r.A, r.b, r.h)
+
+    else:  # "X"
+        if r.is_circular:
+            if r.h is not None:
+                out.update(solid_round_properties(r.h))
+        elif r.h is not None and r.b is not None:
+            out.update(solid_rect_properties(r.h, r.b))
+
+    return out
 
 
 # --- Calcul EC3 ---------------------------------------------------------------

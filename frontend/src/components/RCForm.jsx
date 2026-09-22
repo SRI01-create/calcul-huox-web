@@ -1,8 +1,11 @@
 // Phase 20 — Liste des RC (Regroupements de Calcul) — étape 1, Configuration.
+// Phase 33 : vue tableau compacte (RCTable) au lieu de l'empilement de
+// cartes — devenu trop lourd avec beaucoup de RC configurés. Chaque RC se
+// déplie en cliquant sa ligne (la carte détaillée, RCRow, est inchangée).
 
 import React from 'react'
 import { useStore } from '../store'
-import RCRow from './RCRow'
+import RCTable from './RCTable'
 
 export default function RCForm() {
   const rcConfigs = useStore((s) => s.rcConfigs)
@@ -41,19 +44,15 @@ export default function RCForm() {
         </p>
       )}
 
-      {rcConfigs.length === 0 && (
+      {rcConfigs.length === 0 ? (
         <p className="text-sm text-gray-400 italic">
           Aucun RC défini — chaque RC correspond à un groupe d'éléments
           partageant la même section, le même matériau et les mêmes
           paramètres de stabilité (longueurs de flambement, déversement…).
         </p>
+      ) : (
+        <RCTable rcConfigs={rcConfigs} materials={materials} />
       )}
-
-      <div className="space-y-3">
-        {rcConfigs.map((rc) => (
-          <RCRow key={rc._uid} rc={rc} />
-        ))}
-      </div>
     </section>
   )
 }

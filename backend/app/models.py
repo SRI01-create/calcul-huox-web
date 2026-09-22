@@ -79,6 +79,81 @@ class BucklingCurve(str, Enum):
 # MODÈLES D'ENTRÉE
 # ═══════════════════════════════════════════════════════════════════════════════
 
+class CustomSection(BaseModel):
+    """
+    Section définie manuellement par l'utilisateur, hors catalogue — Phase 32.
+
+    Un seul modèle pour les 4 familles (par simplicité, comme get_section()
+    qui renvoie déjà des dicts à clés variables selon le type) : les champs
+    pertinents dépendent de RCConfig.section_type. catalogue.resolve_section()
+    valide la présence des champs requis pour la famille concernée et lève un
+    ValueError explicite sinon (→ HTTP 400, même filet que get_section()).
+
+    Toutes les valeurs sont dans la même convention d'unités que le
+    catalogue (cf. catalogue.py) : dimensions en mm, A/Av en m², Iy/Iz/It/Sw
+    en m⁴, Wel/Wpl en m³, IW en m⁶, iy/iz/ym en mm. Le frontend est
+    responsable de convertir les unités "confortables" (cm², cm⁴, cm³, cm⁶)
+    saisies par l'utilisateur avant l'envoi à l'API.
+
+    Certains champs n'ont volontairement aucune formule d'aide (Wpl_y/z,
+    It, IW) : toujours saisis manuellement, quelle que soit la famille.
+    """
+    is_welded:   bool = False
+    is_angle:    bool = False   # U uniquement (cornière)
+    is_circular: bool = False   # O/X uniquement
+
+    # Dimensions (mm) — champs pertinents selon la famille, cf. resolve_section()
+    h:  float           = Field(..., gt=0)
+    b:  Optional[float] = Field(None, gt=0)   # None si is_circular
+    tw: Optional[float] = Field(None, gt=0)   # H/U
+    tf: Optional[float] = Field(None, gt=0)   # H/U
+    r:  Optional[float] = Field(None, ge=0)   # H/U
+    d:  Optional[float] = Field(None, gt=0)   # H/U, None si cornière
+    t:  Optional[float] = Field(None, gt=0)   # O
+
+    # Caractéristiques de section
+    A:     float           = Field(..., gt=0)              # m²
+    Iy:    float           = Field(..., gt=0)              # m⁴
+    Iz:    float           = Field(..., gt=0)              # m⁴
+    Wel_y: float           = Field(..., gt=0)              # m³
+    Wel_z: float           = Field(..., gt=0)              # m³
+    Wpl_y: Optional[float] = Field(None, gt=0)             # m³ ; None si cornière
+    Wpl_z: Optional[float] = Field(None, gt=0)             # m³ ; None si cornière
+    It:    float           = Field(..., gt=0)              # m⁴
+    IW:    Optional[float] = Field(None, gt=0)             # m⁶ ; H/U seulement
+    Sw:    Optional[float] = Field(None, gt=0)             # m⁴ ; H (Sw) / U (Sw_w)
+    Av_y:  float           = Field(..., gt=0)              # m²
+    Av_z:  float           = Field(..., gt=0)              # m²
+
+    # U uniquement — flambement flexion-torsion
+    iy: Optional[float] = Field(None, gt=0)   # mm
+    iz: Optional[float] = Field(None, gt=0)   # mm
+    ym: Optional[float] = None                # mm (peut être négatif selon convention)
+
+
+class CustomSectionSuggestRequest(BaseModel):
+    """
+    Requête pour POST /api/custom-section/suggest (Phase 32).
+
+    Sous-ensemble de dimensions brutes déjà saisies par l'utilisateur dans
+    le formulaire de section personnalisée — tout est optionnel : seules
+    les suggestions dont les dépendances sont présentes sont renvoyées
+    (endpoint volontairement permissif, jamais bloquant — c'est une aide,
+    pas une validation). Mêmes unités que CustomSection (mm / m² / m⁴).
+    """
+    section_type: SectionType
+    is_circular: bool = False
+    h:  Optional[float] = Field(None, gt=0)
+    b:  Optional[float] = Field(None, gt=0)
+    tw: Optional[float] = Field(None, gt=0)
+    tf: Optional[float] = Field(None, gt=0)
+    r:  Optional[float] = Field(None, ge=0)
+    ys: Optional[float] = Field(None, gt=0)   # U seulement — pour la suggestion de Sw,w
+    A:  Optional[float] = Field(None, gt=0)   # m² — déjà converti côté frontend
+    Iy: Optional[float] = Field(None, gt=0)   # m⁴
+    Iz: Optional[float] = Field(None, gt=0)   # m⁴
+
+
 class RCConfig(BaseModel):
     """
     Paramètres d'un numéro RC — correspond à une ligne de la feuille "1" côté RC.
@@ -100,8 +175,23 @@ class RCConfig(BaseModel):
         ),
     )
     section_type:   SectionType = Field(..., description="Type de section : H | U | O | X")
-    designation:    str         = Field(..., min_length=1, description="Désignation exacte du catalogue")
+    designation:    str         = Field(
+        ..., min_length=1,
+        description=(
+            "Désignation exacte du catalogue, ou nom libre si custom_section "
+            "est renseigné (section personnalisée, Phase 32) — sert alors "
+            "uniquement d'étiquette d'affichage, sans recherche catalogue."
+        ),
+    )
     material_number: int        = Field(..., ge=1, description="Référence vers MaterialConfig.material_number")
+    custom_section: Optional[CustomSection] = Field(
+        None,
+        description=(
+            "Section définie manuellement (hors catalogue) — Phase 32. "
+            "Si renseigné, prime sur la recherche catalogue par designation "
+            "(cf. catalogue.resolve_section())."
+        ),
+    )
     manual_section_class: Optional[Literal["1", "2", "3", "4"]] = Field(
         None,
         description=(
