@@ -30,8 +30,12 @@ Colonnes Excel de référence (formules identiques H/U/O/X sauf gardes)
                         Nb_y → MIN(Nb,Rd,y, Nb,Rd,TF) pour U, Nb,Rd,y seul sinon
     DV   kzz (inox)    idem avec Nb_z → MIN(Nb,Rd,z, Nb,Rd,TF) pour U, Nb,Rd,z seul sinon
     DW   1.0           constante (cellule $DW$56) = kLT (H/U uniquement)
-    CW   ratio eq.1    ROUNDUP(NEd/Nb_Rd_min_y + |kyy·My/M_Rd_y| + |kyz·Mz/Mz_c_Rd|, 2)
-    CX   ratio eq.2    ROUNDUP(NEd/Nb_Rd_z     + |kzy·My/M_Rd_y| + |kzz·Mz/Mz_c_Rd|, 2)
+    CW   ratio eq.1    NEd/Nb_Rd_min_y + |kyy·My/M_Rd_y| + |kyz·Mz/Mz_c_Rd|
+                        [Excel : ROUNDUP(..., 2) — arrondi retiré à la demande
+                        de Sem (22/09/2026), jugé inutilement conservateur au
+                        vu des améliorations apportées depuis (Phases 27-34)]
+    CX   ratio eq.2    NEd/Nb_Rd_z     + |kzy·My/M_Rd_y| + |kzz·Mz/Mz_c_Rd|
+                        [même retrait de l'arrondi, même date]
 
 Notes importantes
 ─────────────────
@@ -45,7 +49,7 @@ Notes importantes
                     point autrefois non tranché, désormais résolu — voir
                     _ratio_comb / branche CX ci-dessous.
   U section CW/CX : Nb,Rd,min = MIN(Nb,Rd,y, Nb,Rd,z, Nb,Rd,TF) (Phase 11).
-  O/X sections    : IF(NEd_c=0, 0, ROUNDUP(...)) — retournent 0 si pas de compression.
+  O/X sections    : IF(NEd_c=0, 0, ...) — retournent 0 si pas de compression.
   Classe 4        : retourne "X" (None) dans Excel → None en Python.
 
 Références normatives
@@ -413,15 +417,18 @@ def interaction_factors(
 
     def _ratio_comb(Nb_Rd_denom: float, k_y: float, M_y_denom: float,
                     k_z: float, My_denom_override: Optional[float] = None) -> float:
-        """Calcule ROUNDUP(NEd/Nb + |ky·My/M_y| + |kz·Mz/(Mz_c·gM)| , 2)"""
+        """
+        Calcule NEd/Nb + |ky·My/M_y| + |kz·Mz/(Mz_c·gM)|.
+
+        Excel arrondissait ce résultat au centième supérieur (ROUNDUP(x, 2)) —
+        arrondi retiré à la demande de Sem (22/09/2026) : jugé inutilement
+        conservateur au vu des améliorations apportées depuis (Phases 27-34).
+        """
         term_N  = NEd_c / Nb_Rd_denom
         M_y_den = My_denom_override if My_denom_override is not None else M_y_denom
         term_My = abs(k_y * My_Ed / M_y_den) if abs(M_y_den) > 0 else 0.0
         term_Mz = abs(k_z * Mz_Ed / (Mz_c_Rd * gM_ratio)) if abs(Mz_c_Rd) > 0 else 0.0
-        raw = term_N + term_My + term_Mz
-        # ROUNDUP(x, 2) = ceil(x * 100) / 100
-        import math as _m
-        return _m.ceil(raw * 100) / 100
+        return term_N + term_My + term_Mz
 
     # ── CW ────────────────────────────────────────────────────────────
     if NEd_c == 0.0 and section_type in ("O", "X"):
