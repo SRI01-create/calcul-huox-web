@@ -60,7 +60,7 @@ def precompute(rc: RCConfig, mat: MaterialConfig) -> dict:
     is_ss = (mat.steel_type == "inox")
     gM0, gM1, gM2 = gamma_M(is_ss)
     eps   = epsilon(fy, E, is_ss)
-    fab   = "S" if sec["is_welded"] else "L"   # Phase 31 — déduit du catalogue (plus de champ manuel)
+    fab   = sec.get("fabrication") or ("S" if sec["is_welded"] else "L")   # Phase 35 — fabrication U (dont "F") lue du catalogue/perso, sinon déduite de is_welded
     is_angle = sec["is_angle"]
 
     h  = sec["h"];  b  = sec["b"]
@@ -119,7 +119,10 @@ def precompute(rc: RCConfig, mat: MaterialConfig) -> dict:
     return {
         "sec": sec, "classe": classe, "classe_auto": classe_auto,
         "shear_ok": shear_ok, "is_angle": is_angle,
-        "is_welded": sec["is_welded"], "fab": fab, "epsilon": eps,
+        # is_welded dérivé de fab (pas de sec["is_welded"] brut) : reste
+        # cohérent même si une section perso arrive avec fabrication="F"/"S"
+        # et un is_welded non synchronisé côté appelant (Phase 35).
+        "is_welded": (fab == "S"), "fab": fab, "epsilon": eps,
         "h": h, "b": b, "tw": tw, "tf": tf_eff, "t": None,
         "A": A, "Iy": Iy, "Iz": Iz, "It": It, "IW": IW, "Sw_w": Sw_w,
         "Wpl_y": Wpl_y, "Wel_y": Wel_y, "Wpl_z": Wpl_z, "Wel_z": Wel_z,
@@ -223,6 +226,7 @@ def _check_row(row: pd.Series, pre: dict, rc: RCConfig) -> ElementLCResult:
         rc_number=rc.rc_number, section_type=rc.section_type,
         designation=rc.designation, section_class=str(classe),
         is_welded=pre["is_welded"], is_angle=pre["is_angle"],
+        fabrication=pre["fab"],
         NEd_t=NEd_t, NEd_c=NEd_c, Vy_Ed=Vy, Vz_Ed=Vz,
         TEd=TEd, My_Ed=My, Mz_Ed=Mz,
         ratios=ratios, max_ratio=max_r,
