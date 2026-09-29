@@ -187,6 +187,11 @@ def get_section_classification(
     catalogue, pour la désignation choisie (cf. RCConfig, plus de champ
     `fabrication`).
 
+    Phase 35 : pour U, une 3ᵉ fabrication est possible ("F" formé à froid,
+    physiquement impossible pour H/O/X) — lue directement de la colonne
+    catalogue `fabrication`, ou du champ `custom_section.fabrication` pour
+    une section U personnalisée.
+
     Paramètres
     ----------
     fy, E       : caractéristiques du matériau référencé par le RC (MPa)
@@ -209,7 +214,9 @@ def get_section_classification(
 
     is_ss = (steel_type == SteelType.STAINLESS)
     eps = epsilon(fy, E, is_ss)
-    fab = "S" if sec.get("is_welded") else "L"   # Phase 31 — déduit du catalogue
+    # Phase 35 — U : fabrication (dont "F") lue du catalogue si présente,
+    # sinon déduite de is_welded comme avant (Phase 31, H/O/X inchangés).
+    fab = sec.get("fabrication") or ("S" if sec.get("is_welded") else "L")
 
     if cat_type == "H":
         classe = section_class_H(
@@ -263,6 +270,12 @@ def get_buckling_curve_suggestion(
     le frontend fournit directement is_welded/h/b/tf/t au lieu de s'appuyer
     sur une recherche catalogue — mêmes formules, même résultat, juste une
     source différente pour la géométrie.
+
+    Phase 35 : ce guide reste volontairement indépendant du nouveau champ
+    "fabrication" (U, "F" formé à froid — cf. RCConfig/CustomSection). Il ne
+    reçoit toujours que is_welded (jamais "F") : le cas "formé à froid" a
+    sa propre entrée dédiée et déjà existante côté guide, indépendante,
+    `u_material == "inox_forme_a_froid"`.
     """
     cat_type = cat_type.upper()
     if cat_type not in VALID_TYPES:

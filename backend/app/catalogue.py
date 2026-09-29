@@ -3,6 +3,12 @@ Phase 2 — Chargement et lookup des catalogues de sections.
 Phase 30 — Flags de forme (is_welded/is_angle/is_circular) désormais stockés
 directement en colonnes dans les CSV, au lieu d'être déduits du texte de la
 désignation (archaïsme hérité du classeur Excel d'origine — cf. REPRISE.md).
+Phase 35 — Catalogue U : la colonne booléenne "is_welded" est remplacée par
+une colonne texte "fabrication" à 3 états exclusifs ("L"/"S"/"F" — formé à
+froid, cf. REPRISE.md). H/O/X ne sont pas concernés (formage à froid non
+physiquement possible pour ces familles) et gardent "is_welded" tel quel.
+`is_welded` reste disponible pour U (dérivé de fabrication == "S"), pour ne
+rien changer côté badge [PRS]/affichage.
 
 Charge les 4 CSV (H, U, O, X) en mémoire au démarrage de l'application.
 Fournit un accès O(1) aux propriétés géométriques de ~1 171 sections.
@@ -13,12 +19,12 @@ Fonctions publiques
     get_section(cat_type, designation)     → dict complet des propriétés
     list_sections(cat_type, query="")      → liste de désignations filtrées
 
-Flags de forme stockés (colonnes CSV, 0/1 → bool)
+Flags de forme stockés (colonnes CSV)
 --------------------------------------------------
-    H : is_welded
-    U : is_welded, is_angle
-    O : is_welded, is_circular
-    X : is_welded, is_circular
+    H : is_welded (0/1 → bool)
+    U : fabrication ("L"/"S"/"F" → str, is_welded dérivé), is_angle (0/1 → bool)
+    O : is_welded, is_circular (0/1 → bool)
+    X : is_welded, is_circular (0/1 → bool)
 
     (is_square/is_rectangular ont existé un temps mais n'étaient consommés
     par aucune formule — supprimés en Phase 30.)
@@ -49,6 +55,9 @@ _DATA_DIR = Path(__file__).resolve().parent.parent / "data"
 # Colonnes booléennes (0/1 en CSV) — castées explicitement, pas via to_numeric seul
 _FLAG_COLUMNS = ("is_welded", "is_angle", "is_circular")
 
+# Colonnes texte (non numériques) — jamais passées par to_numeric, jamais castées en bool
+_TEXT_COLUMNS = ("fabrication",)
+
 # Types de catalogue valides
 VALID_TYPES = ("H", "U", "O", "X")
 
@@ -69,8 +78,9 @@ def _load_df(cat_type: str) -> pd.DataFrame:
         )
     df = pd.read_csv(path, dtype={"designation": str}, keep_default_na=True)
 
-    # Forcer le type numérique sur toutes les colonnes sauf la désignation
-    num_cols = [c for c in df.columns if c != "designation"]
+    # Forcer le type numérique sur toutes les colonnes sauf la désignation et
+    # les colonnes texte (fabrication : "L"/"S"/"F", U uniquement — Phase 35)
+    num_cols = [c for c in df.columns if c != "designation" and c not in _TEXT_COLUMNS]
     df[num_cols] = df[num_cols].apply(pd.to_numeric, errors="coerce")
 
     # Index sur la désignation (lookup O(1))
@@ -151,9 +161,9 @@ def get_section(cat_type: str, designation: str) -> dict:
     row = df.loc[designation]
     props: dict = {"cat_type": cat_type, "designation": designation}
 
-    # NaN → None, float sinon (colonnes de flags traitées à part ci-dessous)
+    # NaN → None, float sinon (colonnes de flags et texte traitées à part)
     for col, val in row.items():
-        if col in _FLAG_COLUMNS:
+        if col in _FLAG_COLUMNS or col in _TEXT_COLUMNS:
             continue
         props[col] = None if pd.isna(val) else float(val)
 
@@ -162,6 +172,14 @@ def get_section(cat_type: str, designation: str) -> dict:
     for flag in _FLAG_COLUMNS:
         if flag in row.index:
             props[flag] = bool(row[flag])
+
+    # Fabrication (U uniquement — Phase 35) : "L"/"S"/"F", tel quel en str ;
+    # is_welded dérivé pour ne rien changer côté badge [PRS]/affichage, qui
+    # continue de lire is_welded sans savoir que "fabrication" existe.
+    if "fabrication" in row.index:
+        fab = str(row["fabrication"])
+        props["fabrication"] = fab
+        props["is_welded"] = (fab == "S")
 
     return props
 

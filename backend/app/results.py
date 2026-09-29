@@ -108,6 +108,7 @@ def build_rc_summary(
         is_welded     = pre["is_welded"],
         is_angle      = is_angle,
         is_circular   = is_circular,
+        fabrication   = pre.get("fab"),
 
         # ── Géométrie ────────────────────────────────────────────────────
         h  = pre["h"],

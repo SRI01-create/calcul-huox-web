@@ -101,6 +101,10 @@ class CustomSection(BaseModel):
     is_welded:   bool = False
     is_angle:    bool = False   # U uniquement (cornière)
     is_circular: bool = False   # O/X uniquement
+    # Formé à froid — U uniquement (Phase 35). Physiquement impossible pour
+    # H/O/X, donc ignoré pour ces familles même si renseigné. None = pas
+    # saisi (comportement Phase 31 : "S" si is_welded, sinon "L").
+    fabrication: Optional[Literal["L", "S", "F"]] = None
 
     # Dimensions (mm) — champs pertinents selon la famille, cf. resolve_section()
     h:  float           = Field(..., gt=0)
@@ -409,6 +413,7 @@ class ElementLCResult(BaseModel):
     is_welded:     bool = False   # section soudée (PRS) — Phase 31, pour flag Format 2
     is_angle:      bool = False   # cornière (U uniquement) — Phase 30, pour badge Format 2
     is_circular:   bool = False   # section circulaire (O/X uniquement) — Phase 30, pour badge Format 2
+    fabrication:   Optional[str] = None   # "L"/"S"/"F" (U uniquement) — Phase 35, pour badge [froid]
 
     # Efforts internes (N et N.m)
     NEd_t: float = 0.0   # Traction (N)
@@ -439,6 +444,7 @@ class RCSummary(BaseModel):
     is_welded:    bool
     is_angle:     bool = False   # cornière (U uniquement, sinon False) — Phase 30
     is_circular:  bool = False   # section circulaire (O/X uniquement, sinon False) — Phase 30
+    fabrication:  Optional[str] = None   # "L"/"S"/"F" (U uniquement) — Phase 35, pour badge [froid]
 
     # ── Propriétés géométriques principales ──────────────────────────────
     h:  Optional[float] = None   # mm
