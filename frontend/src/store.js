@@ -133,6 +133,7 @@ export function createDefaultRC(rcNumber, materialNumber) {
 export function createDefaultCustomSection() {
   return {
     is_welded: false, is_angle: false, is_circular: false,
+    fabrication: 'L',   // Phase 35 — U uniquement, ignoré sinon (cf. is_welded)
     h: '', b: '', tw: '', tf: '', r: '', d: '', t: '',
     A: '', Iy: '', Iz: '', Wel_y: '', Wel_z: '', Wpl_y: '', Wpl_z: '',
     It: '', IW: '', Sw: '', Av_y: '', Av_z: '',
@@ -186,9 +187,19 @@ function toNumber(v) {
 function normalizeCustomSection(cs) {
   if (!cs) return null
   const out = { ...cs }
-  out.is_welded = !!out.is_welded
   out.is_angle = !!out.is_angle
   out.is_circular = !!out.is_circular
+  // Phase 35 — formé à froid (U uniquement) : si une fabrication valide est
+  // renseignée, is_welded est recalculé pour rester en synchro (= "S"),
+  // quelle que soit la source (formulaire, import d'un export antérieur à
+  // la Phase 35 sans ce champ, etc.) — une seule vérité, pas deux champs
+  // pouvant se contredire.
+  if (out.fabrication === 'L' || out.fabrication === 'S' || out.fabrication === 'F') {
+    out.is_welded = out.fabrication === 'S'
+  } else {
+    out.fabrication = null
+    out.is_welded = !!out.is_welded
+  }
   for (const f of CUSTOM_SECTION_MM_FIELDS) out[f] = isEmpty(out[f]) ? null : toNumber(out[f])
   for (const f of CUSTOM_SECTION_CM2_FIELDS) out[f] = isEmpty(out[f]) ? null : toNumber(out[f]) * CM2_TO_M2
   for (const f of CUSTOM_SECTION_CM4_FIELDS) out[f] = isEmpty(out[f]) ? null : toNumber(out[f]) * CM4_TO_M4
