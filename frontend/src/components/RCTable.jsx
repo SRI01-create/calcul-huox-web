@@ -12,7 +12,8 @@
 // "3 — Résultats" (ResultsFormat1/2.jsx) et qu'auparavant dans RCRow (retiré
 // de là, devenu redondant — voir RCRow.jsx). Logique de glyphe dupliquée ici
 // par cohérence avec le pattern déjà en place dans ces fichiers (pas de
-// module partagé actuellement).
+// module partagé actuellement). Badge [froid] ajouté à côté de [PRS] pour
+// les U formés à froid (fabrication === "F"), même principe.
 //
 // Pour une section catalogue, is_welded/is_angle/is_circular ne sont pas
 // dans l'objet RC local — un appel réseau par désignation est nécessaire
@@ -87,6 +88,7 @@ export default function RCTable({ rcConfigs, materials }) {
               is_welded: data.is_welded,
               is_angle: data.is_angle,
               is_circular: data.is_circular,
+              fabrication: data.fabrication ?? null,   // Phase 35 — U uniquement
             },
           }))
         })
@@ -133,6 +135,7 @@ export default function RCTable({ rcConfigs, materials }) {
                   is_welded: rc.custom_section.is_welded,
                   is_angle: rc.custom_section.is_angle,
                   is_circular: rc.custom_section.is_circular,
+                  fabrication: rc.custom_section.fabrication ?? null,
                 }
               : rc.designation
               ? sectionFlags[`${rc.section_type}:${rc.designation}`] || null
@@ -163,6 +166,14 @@ export default function RCTable({ rcConfigs, materials }) {
                         title="Section soudée (PRS)"
                       >
                         PRS
+                      </span>
+                    )}
+                    {flags?.fabrication === 'F' && (
+                      <span
+                        className="ml-1.5 text-[10px] bg-cyan-100 text-cyan-700 px-1 py-0.5 rounded"
+                        title="Section formée à froid"
+                      >
+                        froid
                       </span>
                     )}
                     {isCustom && (

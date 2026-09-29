@@ -378,6 +378,12 @@ export default function ResultsFormat2() {
                           PRS
                         </span>
                       )}
+                      {row.fabrication === "F" && (
+                        <span className="ml-1.5 text-[10px] bg-cyan-100 text-cyan-700
+                                         px-1 py-0.5 rounded" title="Section formée à froid">
+                          froid
+                        </span>
+                      )}
                     </Td>
                     <Td cls="text-center">
                       <ClassBadge cls={row.section_class} />

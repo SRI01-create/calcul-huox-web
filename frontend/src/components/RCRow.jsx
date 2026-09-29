@@ -344,8 +344,21 @@ function CustomSectionForm({ sectionType, cs, onChange, ys, onYsChange }) {
   return (
     <div className="border border-dashed border-slate-300 rounded-lg p-4 mt-3 bg-slate-50/50">
       <div className="flex items-center gap-4 mb-3">
-        <CheckboxField label="Section soudée (PRS)" checked={cs.is_welded}
-          onChange={(v) => onChange({ is_welded: v })} />
+        {sectionType === 'U' ? (
+          // Phase 35 — formé à froid n'est physiquement possible que pour U :
+          // sélecteur à 3 états exclusifs, is_welded tenu en synchro (= "S")
+          // pour ne rien changer côté badge [PRS]/is_welded déjà en place.
+          <SelectField label="Fabrication" value={cs.fabrication || 'L'}
+            onChange={(v) => onChange({ fabrication: v, is_welded: v === 'S' })}
+            options={[
+              { value: 'L', label: 'Laminé' },
+              { value: 'S', label: 'Soudé (PRS)' },
+              { value: 'F', label: 'Formé à froid' },
+            ]} />
+        ) : (
+          <CheckboxField label="Section soudée (PRS)" checked={cs.is_welded}
+            onChange={(v) => onChange({ is_welded: v })} />
+        )}
         {sectionType === 'U' && (
           <CheckboxField label="Cornière" checked={cs.is_angle}
             onChange={(v) => onChange({ is_angle: v })} />
