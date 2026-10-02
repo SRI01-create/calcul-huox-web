@@ -180,26 +180,35 @@ def can_ignore_buckling(
     lambda_bar: float,
     NEd_c: float,
     Ncr: float,
+    lambda_0: float,
 ) -> bool:
     """
     Retourne True si le flambement par flexion peut être ignoré (§6.3.1.2(4)).
 
     Condition (OR) :
-        λ̄ ≤ 0.2  OU  NEd,c / Ncr ≤ 0.04
+        λ̄ ≤ λ0  OU  NEd,c / Ncr ≤ λ0²
+
+    Phase 36 : lambda_0 est désormais un paramètre obligatoire (plus de 0.2
+    codé en dur) — sa valeur varie selon la famille et le matériau/CO (0.2
+    pour H et X, 0.2/0.4 pour U et O selon inox+formé à froid ou juste inox
+    — cf. ec3.buckling_flexural.lambda0_flexural, déjà correcte et vérifiée
+    contre le classeur Excel). Utiliser 0.2 en dur ici aurait donné un
+    résultat faux dès qu'un cas réel utilise λ0 = 0.4.
 
     Paramètres
     ----------
     lambda_bar : élancement relatif λ̄
     NEd_c      : effort de compression de calcul (N, ≥ 0)
     Ncr        : charge critique élastique (N, > 0)
+    lambda_0   : valeur du plateau λ0 pour cette famille/ce matériau/ce CO
 
     Retour
     ------
     bool  — True si les effets du flambement peuvent être négligés
     """
-    if lambda_bar <= 0.2:
+    if lambda_bar <= lambda_0:
         return True
-    if Ncr > 0 and NEd_c / Ncr <= 0.04:
+    if Ncr > 0 and NEd_c / Ncr <= lambda_0 ** 2:
         return True
     return False
 
