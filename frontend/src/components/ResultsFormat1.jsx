@@ -94,6 +94,15 @@ function Td({ children, cls = '' }) {
   )
 }
 
+// Phase 36 — tests "oui/non/n.a." (colonnes AO/AQ du classeur Excel).
+// null = n/a (section O/X, ou cornière U — cf. REPRISE.md).
+function yesNoNA(v) {
+  if (v == null) return <span className="text-gray-300">n/a</span>
+  return v
+    ? <span className="text-ratio-ok font-medium">oui</span>
+    : <span className="text-slate-500">non</span>
+}
+
 // Glyphe affiché selon le type ET la forme réelle de la section (Phase 31) :
 //   H → H
 //   U → U (profilé) | L (cornière)
@@ -243,6 +252,7 @@ export default function ResultsFormat1() {
               <GroupTh label="Élancements"              cols={4}  />
               <GroupTh label="Efforts max"              cols={3}  />
               <GroupTh label="Ratios max  (§6.2 / §6.3)"  cols={14} />
+              <GroupTh label="Dispenses"                cols={2}  />
               <GroupTh label="Synthèse"                 cols={2}  />
             </tr>
 
@@ -280,6 +290,9 @@ export default function ResultsFormat1() {
               {RATIOS.map(({ label, title }) => (
                 <Th key={label} title={title} cls="text-center min-w-[44px]">{label}</Th>
               ))}
+              {/* Dispenses */}
+              <Th title="Pour les âmes dépourvues de raidisseurs intermédiaires, possibilité de s'abstenir de la vérification au voilement par cisaillement" cls="text-center">Voil.</Th>
+              <Th title="Possibilité d'ignorer les trous dans la semelle tendue en flexion" cls="text-center">Trous</Th>
               {/* Synthèse */}
               <Th title="Ratio maximal global sur ce groupe RC" cls="text-center min-w-[56px]">MAX</Th>
               <Th title="Avertissements (classe 4, voilement)" cls="text-center">⚠</Th>
@@ -354,6 +367,10 @@ export default function ResultsFormat1() {
                   {RATIOS.map(({ key }) => (
                     <RatioTd key={key} value={r[key] ?? null} />
                   ))}
+
+                  {/* Dispenses */}
+                  <Td cls="text-center">{yesNoNA(rc.shear_buckling_ignored)}</Td>
+                  <Td cls="text-center">{yesNoNA(rc.holes_ignored)}</Td>
 
                   {/* MAX global du RC */}
                   <MaxRatioTd value={rc.overall_max_ratio} />

@@ -136,6 +136,15 @@ function Th({ children, title, cls = '' }) {
   )
 }
 
+// Phase 36 — tests "oui/non/n.a." (colonnes CE/CT du classeur Excel).
+// null = n/a (O/X pour les deux ; classe 4 pour le déversement).
+function yesNoNA(v) {
+  if (v == null) return <span className="text-gray-300">n/a</span>
+  return v
+    ? <span className="text-ratio-ok font-medium">oui</span>
+    : <span className="text-slate-500">non</span>
+}
+
 function Td({ children, cls = '' }) {
   return (
     <td className={`px-2 py-1.5 whitespace-nowrap text-xs text-slate-700 ${cls}`}>
@@ -324,6 +333,7 @@ export default function ResultsFormat2() {
                 <GroupTh label="Identification"             cols={6} first />
                 <GroupTh label="Efforts internes"           cols={3} />
                 <GroupTh label="Ratios EC3  (§6.2 / §6.3)" cols={14} />
+                <GroupTh label="Dispenses"                 cols={2} />
                 <GroupTh label=""                           cols={1} />
               </tr>
 
@@ -346,6 +356,9 @@ export default function ResultsFormat2() {
                     {label}
                   </Th>
                 ))}
+                {/* Dispenses */}
+                <Th title="Possibilité de négliger les effets du flambement : λ ≤ λ0 ou NEd,c/Ncr ≤ λ0²" cls="text-center">Flamb.</Th>
+                <Th title="Possibilité de négliger les effets du déversement : λLT ≤ λLT,0 ou My,Ed/Mcr ≤ λLT,0²" cls="text-center">Dévers.</Th>
                 {/* MAX */}
                 <Th title="Ratio maximal sur cette combinaison" cls="text-center min-w-[52px]">
                   MAX
@@ -398,6 +411,10 @@ export default function ResultsFormat2() {
                     {RATIOS.map(({ key }) => (
                       <RatioTd key={key} value={r[key] ?? null} />
                     ))}
+
+                    {/* Dispenses */}
+                    <Td cls="text-center">{yesNoNA(row.buckling_ignored)}</Td>
+                    <Td cls="text-center">{yesNoNA(row.LTB_ignored)}</Td>
 
                     {/* MAX */}
                     <MaxRatioTd value={row.max_ratio} />
