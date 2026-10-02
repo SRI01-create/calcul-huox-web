@@ -57,7 +57,7 @@ from ..catalogue import resolve_section
 from ..models import (
     AllRatios, ElementLCResult, MaterialConfig, RCConfig,
 )
-from ..ec3.utils import epsilon, gamma_M
+from ..ec3.utils import epsilon, gamma_M, can_ignore_buckling, can_ignore_LTB
 from ..ec3.classification import (
     section_class_H, can_ignore_shear_buckling,
     net_areas, can_ignore_tension_flange_holes,
@@ -125,7 +125,7 @@ def precompute(rc: RCConfig, mat: MaterialConfig) -> dict:
             Af_net, rc.Af_trou or 0.0, fy, mat.fu, gM0, gM2, rc.kr)
     else:
         Anet   = A
-        ignore_tf_holes = True
+        ignore_tf_holes = True   # pas de trous → rien à ignorer, "oui" par convention (cf. Excel)
 
     # ── Résistances pures (Phase 7) ───────────────────────────────────────
     nt_rd = Nt_Rd(classe, A, Anet, fy, mat.fu, gM0, gM2, rc.PTC, rc.kr)
@@ -187,6 +187,7 @@ def precompute(rc: RCConfig, mat: MaterialConfig) -> dict:
         "lambda_bar_y":  p10["lambda_bar_y"],
         "lambda_bar_z":  p10["lambda_bar_z"],
         "lambda_bar_max":p10["lambda_bar_max"],
+        "lambda_0":      p10["lambda_0"],   # Phase 36 — test "négliger le flambement"
         "ratio_Nb":      p10["ratio_Nb"],    # = 0 car NEd=0 dans pré-calc
         "Nb_Rd_TF":      None,    # H : pas de flambement torsion-flexion
         # Déversement
@@ -195,6 +196,8 @@ def precompute(rc: RCConfig, mat: MaterialConfig) -> dict:
         "lambda_bar_LT": p13["lambda_bar_LT"],
         "lambda_LT0":    p13["lambda_LT0"],
         "chi_LT_val":    p13["chi_LT_val"],
+        # Trous en semelle tendue (Phase 36, colonne AQ) — invariant par RC
+        "ignore_tf_holes": ignore_tf_holes,
     }
 
 
@@ -259,6 +262,23 @@ def _check_row(
     # ── Phase 10 : flambement par flexion ─────────────────────────────────
     Nb_y = pre["Nb_Rd_y"]; Nb_z = pre["Nb_Rd_z"]
     ratio_Nb_F = ratio_Nb_flexural(NEd_c, Nb_y, Nb_z)
+
+    # ── Phase 36 : "négliger le flambement" / "négliger le déversement" ───
+    # (colonnes CE et CT) — par ligne, car dépendent de NEd_c/My_Ed réels
+    # (contrairement à Nb,Rd/Mb,Rd, invariants par RC). None = n/a (donnée
+    # manquante — jamais le cas pour H, tout est toujours disponible).
+    lam0 = pre.get("lambda_0"); lam_max = pre.get("lambda_bar_max")
+    Ncr_min = pre.get("Ncr_min")
+    if lam0 is None or lam_max is None or not Ncr_min:
+        buckling_ignored = None
+    else:
+        buckling_ignored = can_ignore_buckling(lam_max, NEd_c, Ncr_min, lam0)
+
+    Mcr_row = pre.get("Mcr"); lam_LT = pre.get("lambda_bar_LT"); lam_LT0 = pre.get("lambda_LT0")
+    if Mcr_row is None or lam_LT is None or lam_LT0 is None:
+        LTB_ignored = None
+    else:
+        LTB_ignored = can_ignore_LTB(lam_LT, lam_LT0, abs(My), Mcr_row)
 
     # ── Phase 13 : déversement (ratio par ligne, Mb,Rd déjà pré-calculé) ──
     # Excel arrondit toujours au centième supérieur : CV = ABS(ROUNDUP(My/Mb,Rd, 2))
@@ -326,6 +346,8 @@ def _check_row(
         section_class= str(classe),
         is_welded    = pre["is_welded"],
         fabrication  = pre["fab"],
+        buckling_ignored = buckling_ignored,
+        LTB_ignored       = LTB_ignored,
         NEd_t = NEd_t, NEd_c = NEd_c,
         Vy_Ed = Vy,    Vz_Ed = Vz,
         TEd   = TEd,   My_Ed = My, Mz_Ed = Mz,

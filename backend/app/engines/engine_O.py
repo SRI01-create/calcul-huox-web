@@ -26,7 +26,7 @@ import pandas as pd
 
 from ..catalogue import resolve_section
 from ..models import AllRatios, ElementLCResult, MaterialConfig, RCConfig
-from ..ec3.utils import epsilon, gamma_M
+from ..ec3.utils import epsilon, gamma_M, can_ignore_buckling
 from ..ec3.classification import section_class_O, net_areas
 from ..ec3.section_pure import Nt_Rd, Nc_Rd, Mc_Rd, Vpl_Rd
 from ..ec3.torsion import tau_bredt_O, Vpl_T_Rd_UOX
@@ -159,6 +159,17 @@ def _check_row(row: pd.Series, pre: dict, rc: RCConfig) -> ElementLCResult:
     # ── Phase 13 : pas de déversement pour O ────────────────────────────────
     ratio_Mb = ratio_LTB(My, pre["Mb_Rd"])    # toujours None (Mb_Rd=None)
 
+    # ── Phase 36 : "négliger le flambement" (colonne CE) — s'applique à O,
+    # par ligne (NEd_c réel). "Négliger le déversement" (CT) n'existe pas
+    # pour O dans l'Excel — LTB_ignored reste None (valeur par défaut du
+    # modèle), aucun calcul nécessaire.
+    lam0 = pre.get("lambda_0"); lam_max = pre.get("lambda_bar_max")
+    Ncr_min = pre.get("Ncr_min")
+    if lam0 is None or lam_max is None or not Ncr_min:
+        buckling_ignored = None
+    else:
+        buckling_ignored = can_ignore_buckling(lam_max, NEd_c, Ncr_min, lam0)
+
     # ── Phase 14 : interaction + ratios combinés ────────────────────────────
     inter = interaction_factors(
         A=pre["A"], Iy=pre["Iy"], It=pre["It"],
@@ -199,6 +210,7 @@ def _check_row(row: pd.Series, pre: dict, rc: RCConfig) -> ElementLCResult:
         rc_number=rc.rc_number, section_type=rc.section_type,
         designation=rc.designation, section_class=str(classe),
         is_welded=pre["is_welded"], is_circular=pre["is_circular"], fabrication=pre["fab"],
+        buckling_ignored=buckling_ignored,
         NEd_t=NEd_t, NEd_c=NEd_c, Vy_Ed=Vy, Vz_Ed=Vz,
         TEd=TEd, My_Ed=My, Mz_Ed=Mz,
         ratios=ratios, max_ratio=max_r,

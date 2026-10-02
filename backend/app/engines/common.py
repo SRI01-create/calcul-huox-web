@@ -148,7 +148,7 @@ def compute_stability(
     ------
     dict :
         Ncr_min, Nb_Rd_y, Nb_Rd_z,
-        lambda_bar_y, lambda_bar_z, lambda_bar_max,
+        lambda_bar_y, lambda_bar_z, lambda_bar_max, lambda_0,
         Nb_Rd_TF,
         Mcr, Mb_Rd, lambda_bar_LT, lambda_LT0, chi_LT_val
     """
@@ -197,6 +197,7 @@ def compute_stability(
         "lambda_bar_y":   p10["lambda_bar_y"],
         "lambda_bar_z":   p10["lambda_bar_z"],
         "lambda_bar_max": p11["lambda_bar_max"],
+        "lambda_0":       p10["lambda_0"],   # Phase 36 — test "négliger le flambement"
         "Nb_Rd_TF":       p11["Nb_Rd_TF"],
         "Mcr":            Mcr,
         "Mb_Rd":          p13["Mb_Rd"],

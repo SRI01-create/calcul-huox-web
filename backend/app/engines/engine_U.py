@@ -31,7 +31,7 @@ import pandas as pd
 
 from ..catalogue import resolve_section
 from ..models import AllRatios, ElementLCResult, MaterialConfig, RCConfig
-from ..ec3.utils import epsilon, gamma_M
+from ..ec3.utils import epsilon, gamma_M, can_ignore_buckling, can_ignore_LTB
 from ..ec3.classification import (
     section_class_U, can_ignore_shear_buckling,
     net_areas, can_ignore_tension_flange_holes,
@@ -94,6 +94,19 @@ def precompute(rc: RCConfig, mat: MaterialConfig) -> dict:
         Af_net= na["Af_net"]
     else:
         Anet = A
+        Af_net = A
+
+    # Trous en semelle tendue (Phase 36, colonne AQ) — même formule que H,
+    # sauf cornières : exclues (n/a), à la demande explicite de Sem — pas
+    # une lecture littérale de l'Excel (qui n'a pas cette exclusion), mais
+    # une décision produit.
+    if is_angle:
+        ignore_tf_holes = None
+    elif rc.PTC != "P" and rc.A_trou:
+        ignore_tf_holes = can_ignore_tension_flange_holes(
+            Af_net, rc.Af_trou or 0.0, fy, mat.fu, gM0, gM2, rc.kr)
+    else:
+        ignore_tf_holes = True   # pas de trous → rien à ignorer, "oui" par convention
 
     # ── Résistances pures (Phase 7) ───────────────────────────────────────
     nt_rd = Nt_Rd(classe, A, Anet, fy, mat.fu, gM0, gM2, rc.PTC, rc.kr)
@@ -130,7 +143,8 @@ def precompute(rc: RCConfig, mat: MaterialConfig) -> dict:
         "gM0": gM0, "gM1": gM1, "gM2": gM2,
         "nt_rd": nt_rd, "nc_rd": nc_rd,
         "my_c": my_c, "mz_c": mz_c, "vy_pl": vy_pl, "vz_pl": vz_pl,
-        **stab,
+        "ignore_tf_holes": ignore_tf_holes,   # Phase 36, colonne AQ
+        **stab,   # inclut désormais "lambda_0" (Phase 36, colonne CE)
     }
 
 
@@ -186,6 +200,21 @@ def _check_row(row: pd.Series, pre: dict, rc: RCConfig) -> ElementLCResult:
     # ── Phase 13 : déversement ──────────────────────────────────────────────
     ratio_Mb = ratio_LTB(My, pre["Mb_Rd"])
 
+    # ── Phase 36 : "négliger le flambement" / "négliger le déversement" ───
+    # Même principe qu'en H — par ligne (NEd_c/My_Ed réels), None = n/a.
+    lam0 = pre.get("lambda_0"); lam_max = pre.get("lambda_bar_max")
+    Ncr_min = pre.get("Ncr_min")
+    if lam0 is None or lam_max is None or not Ncr_min:
+        buckling_ignored = None
+    else:
+        buckling_ignored = can_ignore_buckling(lam_max, NEd_c, Ncr_min, lam0)
+
+    Mcr_row = pre.get("Mcr"); lam_LT = pre.get("lambda_bar_LT"); lam_LT0 = pre.get("lambda_LT0")
+    if Mcr_row is None or lam_LT is None or lam_LT0 is None:
+        LTB_ignored = None
+    else:
+        LTB_ignored = can_ignore_LTB(lam_LT, lam_LT0, abs(My), Mcr_row)
+
     # ── Phase 14 : interaction + ratios combinés ────────────────────────────
     inter = interaction_factors(
         A=pre["A"], Iy=pre["Iy"], It=pre["It"],
@@ -231,6 +260,8 @@ def _check_row(row: pd.Series, pre: dict, rc: RCConfig) -> ElementLCResult:
         TEd=TEd, My_Ed=My, Mz_Ed=Mz,
         ratios=ratios, max_ratio=max_r,
         shear_buckling_ok=pre["shear_ok"],
+        buckling_ignored=buckling_ignored,
+        LTB_ignored=LTB_ignored,
     )
 
 
