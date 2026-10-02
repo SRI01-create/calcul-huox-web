@@ -428,6 +428,13 @@ class ElementLCResult(BaseModel):
     max_ratio: Optional[float] = None
     shear_buckling_ok: bool = True   # False si h/tw > 72ε (avertissement)
 
+    # Tests "oui/non/n.a." Phase 36 — dépendent de NEd_c/My_Ed donc varient
+    # par ligne (contrairement aux tests 1/2 sur RCSummary, invariants par
+    # RC). None = n/a (O/X toujours ; classe 4 pour le déversement, comme
+    # dans le classeur Excel où CS/CU retournent "X" en classe 4).
+    buckling_ignored: Optional[bool] = None   # colonne CE — flambement par flexion
+    LTB_ignored:      Optional[bool] = None   # colonne CT — déversement (H/U uniquement)
+
 
 class RCSummary(BaseModel):
     """
@@ -445,6 +452,13 @@ class RCSummary(BaseModel):
     is_angle:     bool = False   # cornière (U uniquement, sinon False) — Phase 30
     is_circular:  bool = False   # section circulaire (O/X uniquement, sinon False) — Phase 30
     fabrication:  Optional[str] = None   # "L"/"S"/"F" (U uniquement) — Phase 35, pour badge [froid]
+
+    # Tests "oui/non/n.a." Phase 36 — invariants par RC (propriétés de
+    # section, indépendants du cas de charge), contrairement à
+    # buckling_ignored/LTB_ignored sur ElementLCResult. None = n/a (O/X
+    # toujours ; cornières U, décision Sem, cf. REPRISE.md).
+    shear_buckling_ignored: Optional[bool] = None   # colonne AO — voilement cisaillement
+    holes_ignored:          Optional[bool] = None   # colonne AQ — trous semelle tendue
 
     # ── Propriétés géométriques principales ──────────────────────────────
     h:  Optional[float] = None   # mm

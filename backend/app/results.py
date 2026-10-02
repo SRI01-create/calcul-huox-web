@@ -99,6 +99,17 @@ def build_rc_summary(
     is_angle    = pre.get("is_angle", False)
     is_circular = pre.get("is_circular", False)
 
+    # Tests "oui/non/n.a." Phase 36 (colonnes AO/AQ, invariants par RC) :
+    # shear_buckling_ignored dérivé ici (pas dans can_ignore_shear_buckling
+    # elle-même, pour ne rien changer au mécanisme shear_buckling_ok/warning
+    # déjà validé) — n/a pour O/X et pour les cornières U (décision Sem).
+    # holes_ignored est déjà None-aware (absent pour O/X, None pour les
+    # cornières U) depuis les moteurs.
+    shear_buckling_ignored = (
+        None if (rc.section_type in ("O", "X") or is_angle) else pre.get("shear_ok")
+    )
+    holes_ignored = pre.get("ignore_tf_holes")
+
     return RCSummary(
         rc_number     = rc.rc_number,
         section_type  = rc.section_type,
@@ -109,6 +120,8 @@ def build_rc_summary(
         is_angle      = is_angle,
         is_circular   = is_circular,
         fabrication   = pre.get("fab"),
+        shear_buckling_ignored = shear_buckling_ignored,
+        holes_ignored           = holes_ignored,
 
         # ── Géométrie ────────────────────────────────────────────────────
         h  = pre["h"],
