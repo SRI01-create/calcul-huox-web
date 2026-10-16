@@ -110,6 +110,15 @@ def build_rc_summary(
     )
     holes_ignored = pre.get("ignore_tf_holes")
 
+    # ── Refonte page Résultats : valeurs d'affichage (aucun calcul nouveau) ──
+    sec = pre.get("sec") or {}
+    is_HU = rc.section_type in ("H", "U")
+    # X : jamais de trous (engine_X ignore PTC) → on affiche "P" quoi qu'il y ait en config
+    ptc_eff = "P" if rc.section_type == "X" else rc.PTC
+    holed   = ptc_eff != "P"
+    lam_vals = [v for v in (pre.get("lambda_bar_y"), pre.get("lambda_bar_z")) if v is not None]
+    lambda_max = max(lam_vals) if lam_vals else None
+
     return RCSummary(
         rc_number     = rc.rc_number,
         section_type  = rc.section_type,
@@ -120,6 +129,7 @@ def build_rc_summary(
         is_angle      = is_angle,
         is_circular   = is_circular,
         fabrication   = pre.get("fab"),
+        is_custom     = rc.custom_section is not None,
         shear_buckling_ignored = shear_buckling_ignored,
         holes_ignored           = holes_ignored,
 
@@ -130,6 +140,40 @@ def build_rc_summary(
         tf = pre["tf"],
         t  = pre["t"],
         A  = pre["A"],
+
+        # ── Géométrie complémentaire / caractéristiques (affichage) ──────
+        r  = sec.get("r"),  d  = sec.get("d"),
+        iy = sec.get("iy"), iz = sec.get("iz"),
+        ym = sec.get("ym"), ys = sec.get("ys"),
+        Av_y  = sec.get("Av_y"),  Av_z  = sec.get("Av_z"),
+        Iy    = pre.get("Iy"),    Iz    = pre.get("Iz"),
+        Wel_y = pre.get("Wel_y"), Wpl_y = pre.get("Wpl_y"),
+        Wel_z = pre.get("Wel_z"), Wpl_z = pre.get("Wpl_z"),
+        It    = pre.get("It"),    Iw    = pre.get("IW"),
+        Sw    = pre.get("Sw"),    Sw_w  = pre.get("Sw_w"),
+
+        # ── Trous ────────────────────────────────────────────────────────
+        PTC     = ptc_eff,
+        A_trou  = rc.A_trou  if holed else None,
+        Af_trou = rc.Af_trou if (holed and is_HU) else None,
+        Anet    = pre.get("Anet") if holed else None,
+        Af_net  = pre.get("Af_net") if (holed and is_HU) else None,
+        kr      = rc.kr,
+
+        # ── Flambement / déversement (paramètres saisis) ─────────────────
+        L   = rc.L, cry = rc.cry, crz = rc.crz,
+        crT = rc.crT if rc.section_type == "U" else None,
+        buckling_curve_y = rc.buckling_curve_y,
+        buckling_curve_z = rc.buckling_curve_z,
+        lambda_max = lambda_max,
+        Lm         = rc.Lm         if is_HU else None,
+        zG         = rc.zG         if is_HU else None,
+        ltb_config = rc.ltb_config if is_HU else None,
+
+        # ── Charges critiques ────────────────────────────────────────────
+        Ncr_min = pre.get("Ncr_min"),
+        Ncr_T   = pre.get("Ncr_T"),
+        Ncr_TF  = pre.get("Ncr_TF"),
 
         # ── Matériau ─────────────────────────────────────────────────────
         material_designation = material.designation,

@@ -1,157 +1,38 @@
-// Phase 23 — Résultats Format 2 : tableau détaillé par élément × cas de charge.
+// Refonte page « 3 — Résultats » — bloc 3 : détail par élément × cas de charge.
 //
-// Une ligne par combinaison (élément × CdC).
+// Une ligne par combinaison (élément × CdC), 4 groupes de colonnes :
+//   Identification · Dispenses · Efforts et moments maximaux · Ratios maximaux
 // Données : store.result.format2 (liste de ElementLCResult),
 // déjà triée (rc_number, element_id, lc_name) par le backend — rc_number est
 // un identifiant texte libre (Phase 28) : tri alphabétique simple, pas numérique.
 //
 // Fonctionnalités :
-//   • Filtres : RC | classe de section | seuil ratio MAX
+//   • Filtres : RC | seuil ratio MAX   (le filtre par classe a été retiré avec
+//     la colonne « Cl. », refonte page Résultats)
 //   • Compteur de lignes filtrées / total
 //   • Pagination ajustable (25 / 100 / 200 lignes par page)
-//   • Code couleur ratios identique au Format 1  (text-ratio-*)
+//   • Code couleur ratios identique à la synthèse  (text-ratio-*)
 //   • Cellule « — » pour ratio None (vérification hors-portée)
+// Unités : efforts en kN, moments en kN·m.
 
 import React, { useState, useMemo } from 'react'
 import { useStore } from '../store'
+import {
+  kN, kNm, RATIOS, RatioTd, MaxRatioTd, GroupTh, Th, Td,
+  yesNoNA, TypeBadge, SectionLabel, RatioLegend,
+} from './resultsShared'
+import { ANCHORS } from './ResultsOverview'
 
-// ─── Helpers de formatage ─────────────────────────────────────────────────────
-
-const kN  = (v) => v != null ? (v / 1e3).toFixed(1) : '—'  // N   → kN
-const kNm = (v) => v != null ? (v / 1e3).toFixed(1) : '—'  // N·m → kN·m
-
-// ─── Code couleur ratio ───────────────────────────────────────────────────────
-
-function ratioClasses(v) {
-  if (v == null) return 'bg-gray-50 text-gray-300'
-  if (v > 1.0)  return 'bg-red-100   text-ratio-over   font-bold'
-  if (v >= 0.9) return 'bg-orange-50 text-ratio-danger font-semibold'
-  if (v >= 0.5) return 'bg-yellow-50 text-ratio-warning'
-  return               'bg-green-50  text-ratio-ok'
-}
-
-function RatioTd({ value }) {
-  return (
-    <td className={`px-1.5 py-1 text-center text-xs tabular-nums ${ratioClasses(value)}`}>
-      {value != null ? value.toFixed(3) : '—'}
-    </td>
-  )
-}
-
-function MaxRatioTd({ value }) {
-  return (
-    <td className={`px-2 py-1 text-center text-xs font-bold tabular-nums ${ratioClasses(value)}`}>
-      {value != null ? value.toFixed(3) : '—'}
-    </td>
-  )
-}
-
-// ─── 14 ratios AllRatios ──────────────────────────────────────────────────────
-
-const RATIOS = [
-  { key: 'ratio_N',      label: 'N',    title: 'NEd / Nt,Rd ou NEd / Nc,Rd  —  §6.2.3/4' },
-  { key: 'ratio_Vy',    label: 'Vy',   title: 'Vy,Ed / Vpl,y,Rd  —  §6.2.6' },
-  { key: 'ratio_Vz',    label: 'Vz',   title: 'Vz,Ed / Vpl,z,Rd  —  §6.2.6' },
-  { key: 'ratio_T',     label: 'T',    title: 'τ / τ_Rd  —  torsion  §6.2.7' },
-  { key: 'ratio_cy',    label: 'cy',   title: 'My,Ed / My,c,Rd  —  flexion section  §6.2.5' },
-  { key: 'ratio_cz',    label: 'cz',   title: 'Mz,Ed / Mz,c,Rd  —  flexion section  §6.2.5' },
-  { key: 'ratio_VyT',   label: 'VyT',  title: 'Vy,Ed / Vy,pl,T,Rd  —  cisaillement réduit torsion y' },
-  { key: 'ratio_VzT',   label: 'VzT',  title: 'Vz,Ed / Vz,pl,T,Rd  —  cisaillement réduit torsion z' },
-  { key: 'ratio_cVN',   label: 'N+M',  title: 'Interaction N + V + M section  —  §6.2' },
-  { key: 'ratio_Nb_F',  label: 'Nb,F', title: 'NEd / min(Nb,y,Rd, Nb,z,Rd)  —  flambement flexion  §6.3.1' },
-  { key: 'ratio_Nb_TF', label: 'NbTF', title: 'NEd / Nb,TF,Rd  —  torsion-flexion (U uniquement)  §6.3.1' },
-  { key: 'ratio_Mb',    label: 'Mb',   title: 'My,Ed / Mb,Rd  —  déversement  §6.3.2' },
-  { key: 'ratio_MNy_b', label: 'MNy',  title: '§6.3.3 éq. 6.61  (CW)  —  interaction flambement + déversement' },
-  { key: 'ratio_MNz_b', label: 'MNz',  title: '§6.3.3 éq. 6.62  (CX)  —  interaction flambement + déversement' },
+// Efforts et moments maximaux : intitulés du descriptif, unité dans le titre.
+const EFFORTS = [
+  { label: 'NtE', unit: 'kN',   key: 'NEd_t', fmt: kN,  title: 'Effort normal de traction NEd,t' },
+  { label: 'NcE', unit: 'kN',   key: 'NEd_c', fmt: kN,  title: 'Effort normal de compression NEd,c' },
+  { label: 'VyE', unit: 'kN',   key: 'Vy_Ed', fmt: kN,  title: 'Effort tranchant Vy,Ed' },
+  { label: 'VzE', unit: 'kN',   key: 'Vz_Ed', fmt: kN,  title: 'Effort tranchant Vz,Ed' },
+  { label: 'TE',  unit: 'kN·m', key: 'TEd',   fmt: kNm, title: 'Moment de torsion TEd' },
+  { label: 'MyE', unit: 'kN·m', key: 'My_Ed', fmt: kNm, title: 'Moment fléchissant My,Ed' },
+  { label: 'MzE', unit: 'kN·m', key: 'Mz_Ed', fmt: kNm, title: 'Moment fléchissant Mz,Ed' },
 ]
-
-// ─── Badges (identiques à Format 1) ──────────────────────────────────────────
-
-// Glyphe selon type ET forme réelle (Phase 31) — voir ResultsFormat1.jsx.
-function shapeFlag(type, isAngle, isCircular) {
-  if (type === 'U') return isAngle
-    ? { glyph: 'L', title: 'Cornière (U)' }
-    : { glyph: 'U', title: 'Section U' }
-  if (type === 'O') return isCircular
-    ? { glyph: 'O', title: 'Section circulaire (O)' }
-    : { glyph: '□', title: 'Section creuse non circulaire (O)' }
-  if (type === 'X') return isCircular
-    ? { glyph: '●', title: 'Section pleine circulaire (X)' }
-    : { glyph: '■', title: 'Section pleine non circulaire (X)' }
-  return { glyph: type, title: 'Section H (I/H)' }
-}
-
-function TypeBadge({ type, isAngle, isCircular }) {
-  const p = {
-    H: 'bg-blue-100 text-blue-800',
-    U: 'bg-violet-100 text-violet-800',
-    O: 'bg-teal-100 text-teal-800',
-    X: 'bg-orange-100 text-orange-800',
-  }
-  const { glyph, title } = shapeFlag(type, isAngle, isCircular)
-  return (
-    <span className={`px-1.5 py-0.5 rounded text-[11px] font-bold
-                      ${p[type] ?? 'bg-gray-100 text-gray-600'}`} title={title}>
-      {glyph}
-    </span>
-  )
-}
-
-function ClassBadge({ cls }) {
-  const n = parseInt(cls)
-  const p = {
-    1: 'bg-green-100  text-green-800',
-    2: 'bg-lime-100   text-lime-800',
-    3: 'bg-yellow-100 text-yellow-800',
-    4: 'bg-red-100    text-red-700 font-bold',
-  }
-  return (
-    <span className={`px-1.5 py-0.5 rounded text-[11px] font-semibold
-                      ${p[n] ?? 'bg-gray-100 text-gray-600'}`}>
-      {cls}
-    </span>
-  )
-}
-
-// ─── Sous-composants tableau ──────────────────────────────────────────────────
-
-function GroupTh({ label, cols, first = false }) {
-  return (
-    <th colSpan={cols}
-      className={`px-3 py-1.5 text-left text-[11px] font-semibold tracking-wide
-                  text-white bg-slate-700
-                  ${first ? '' : 'border-l border-slate-500'}`}>
-      {label}
-    </th>
-  )
-}
-
-function Th({ children, title, cls = '' }) {
-  return (
-    <th title={title}
-      className={`px-2 py-1.5 whitespace-nowrap text-left text-[11px] font-semibold
-                  text-slate-600 bg-slate-100 border-b border-slate-200 ${cls}`}>
-      {children}
-    </th>
-  )
-}
-
-// Phase 36 — tests "oui/non/n.a." (colonnes CE/CT du classeur Excel).
-// null = n/a (O/X pour les deux ; classe 4 pour le déversement).
-function yesNoNA(v) {
-  if (v == null) return <span className="text-gray-300">n/a</span>
-  return v
-    ? <span className="text-ratio-ok font-medium">oui</span>
-    : <span className="text-slate-500">non</span>
-}
-
-function Td({ children, cls = '' }) {
-  return (
-    <td className={`px-2 py-1.5 whitespace-nowrap text-xs text-slate-700 ${cls}`}>
-      {children}
-    </td>
-  )
-}
 
 // ─── Constantes de filtre et pagination ──────────────────────────────────────
 
@@ -170,33 +51,17 @@ export default function ResultsFormat2() {
   const result = useStore((s) => s.result)
 
   const [filterRC,       setFilterRC]       = useState('all')
-  const [filterClass,    setFilterClass]    = useState('all')
   const [filterMinRatio, setFilterMinRatio] = useState(0)
   const [page,           setPage]           = useState(1)
   const [pageSize,       setPageSize]       = useState(100)
 
-  // Format1 gère déjà l'état vide — ici on retourne null si pas de résultat
-  if (!result) return null
-
-  const { format2 } = result
-
-  if (!format2 || format2.length === 0) {
-    return (
-      <p className="text-sm text-gray-400 italic py-6 text-center">
-        Aucun résultat Format 2.
-      </p>
-    )
-  }
+  const format2 = result?.format2 ?? []
 
   // ── Options de filtre déduites des données ────────────────────────────────
+  // (hooks appelés avant tout retour anticipé — règle des hooks de React)
 
   const rcOptions = useMemo(
     () => [...new Set(format2.map((r) => r.rc_number))].sort(),
-    [format2],
-  )
-
-  const classOptions = useMemo(
-    () => [...new Set(format2.map((r) => r.section_class))].sort(),
     [format2],
   )
 
@@ -205,11 +70,21 @@ export default function ResultsFormat2() {
   const filtered = useMemo(() => {
     return format2.filter((row) => {
       if (filterRC !== 'all' && row.rc_number !== filterRC) return false
-      if (filterClass !== 'all' && row.section_class !== filterClass)  return false
       if (filterMinRatio > 0 && (row.max_ratio ?? 0) < filterMinRatio) return false
       return true
     })
-  }, [format2, filterRC, filterClass, filterMinRatio])
+  }, [format2, filterRC, filterMinRatio])
+
+  // Synthèse affichée en haut de page : on ne rend rien sans résultat
+  if (!result) return null
+
+  if (format2.length === 0) {
+    return (
+      <p className="text-sm text-gray-400 italic py-6 text-center">
+        Aucun résultat détaillé.
+      </p>
+    )
+  }
 
   // ── Pagination ────────────────────────────────────────────────────────────
 
@@ -224,15 +99,16 @@ export default function ResultsFormat2() {
   }
 
   function resetFilters() {
-    setFilterRC('all'); setFilterClass('all'); setFilterMinRatio(0); setPage(1)
+    setFilterRC('all'); setFilterMinRatio(0); setPage(1)
   }
 
-  const isFiltered = filterRC !== 'all' || filterClass !== 'all' || filterMinRatio > 0
+  const isFiltered = filterRC !== 'all' || filterMinRatio > 0
 
   // ─────────────────────────────────────────────────────────────────────────
 
   return (
-    <div className="space-y-4 mt-10 pt-8 border-t border-gray-200">
+    <section id={ANCHORS.detail}
+      className="space-y-4 mt-10 pt-8 border-t border-gray-200 scroll-mt-4">
 
       {/* ── En-tête ───────────────────────────────────────────────────────── */}
       <div className="flex items-start justify-between flex-wrap gap-4">
@@ -241,7 +117,7 @@ export default function ResultsFormat2() {
             Détail par élément × cas de charge
           </h2>
           <p className="text-sm text-gray-500 mt-0.5">
-            Format 2 — Les 14 ratios EC3 pour chaque combinaison élément × CdC.
+            Les 14 ratios EC3 pour chaque combinaison élément × CdC.
           </p>
         </div>
         <div className="flex items-center gap-1.5 text-xs text-gray-500 pt-1.5">
@@ -281,23 +157,6 @@ export default function ResultsFormat2() {
 
         <div className="h-5 border-l border-slate-300 hidden sm:block" />
 
-        {/* Classe */}
-        <label className="flex items-center gap-2">
-          <span className="text-xs font-medium text-slate-600">Classe</span>
-          <select
-            value={filterClass}
-            onChange={(e) => setFilter(setFilterClass)(e.target.value)}
-            className="text-xs border border-slate-300 rounded px-2 py-1 bg-white
-                       text-slate-700 focus:outline-none focus:ring-1 focus:ring-slate-400">
-            <option value="all">Toutes</option>
-            {classOptions.map((c) => (
-              <option key={c} value={c}>Classe {c}</option>
-            ))}
-          </select>
-        </label>
-
-        <div className="h-5 border-l border-slate-300 hidden sm:block" />
-
         {/* Seuil ratio */}
         <div className="flex items-center gap-2">
           <span className="text-xs font-medium text-slate-600">Seuil MAX</span>
@@ -330,36 +189,37 @@ export default function ResultsFormat2() {
             <thead>
               {/* Ligne 1 — groupes */}
               <tr>
-                <GroupTh label="Identification"             cols={6} first />
-                <GroupTh label="Efforts internes"           cols={3} />
-                <GroupTh label="Ratios EC3  (§6.2 / §6.3)" cols={14} />
-                <GroupTh label="Dispenses"                 cols={2} />
-                <GroupTh label=""                           cols={1} />
+                <GroupTh label="Identification"              cols={5} first />
+                <GroupTh label="Dispenses"                   cols={2} />
+                <GroupTh label="Efforts et moments maximaux" cols={EFFORTS.length} />
+                <GroupTh label="Ratios maximaux"             cols={RATIOS.length + 1} />
               </tr>
 
               {/* Ligne 2 — colonnes individuelles */}
               <tr>
+                {/* Identification */}
                 <Th title="Groupe RC">RC</Th>
                 <Th title="Identifiant numérique de l'élément" cls="text-right">Élém.</Th>
                 <Th title="Nom du cas de charge (issu du nom de fichier LC)"
                     cls="min-w-[90px]">CdC</Th>
-                <Th title="Type de section  (H / U / O / X)" cls="text-center">Type</Th>
-                <Th title="Désignation de la section" cls="min-w-[100px]">Section</Th>
-                <Th title="Classe de section EC3  (1 à 4)" cls="text-center">Cl.</Th>
-                {/* Efforts */}
-                <Th title="Effort normal de compression NEd,c (kN)" cls="text-right">NEd,c</Th>
-                <Th title="Moment fléchissant My,Ed (kN·m)" cls="text-right">My,Ed</Th>
-                <Th title="Moment fléchissant Mz,Ed (kN·m)" cls="text-right">Mz,Ed</Th>
-                {/* 14 ratios */}
+                <Th title="Type de section (flag de forme)" cls="text-center">Type</Th>
+                <Th title="Désignation de la section — badges [PRS] [froid] [perso]"
+                    cls="min-w-[100px]">Section</Th>
+                {/* Dispenses */}
+                <Th title="Possibilité de négliger les effets du flambement : λ ≤ λ0 ou NEd,c/Ncr ≤ λ0²" cls="text-center">Flamb.</Th>
+                <Th title="Possibilité de négliger les effets du déversement : λLT ≤ λLT,0 ou My,Ed/Mcr ≤ λLT,0²" cls="text-center">Dévers.</Th>
+                {/* Efforts et moments maximaux */}
+                {EFFORTS.map(({ label, unit, title }) => (
+                  <Th key={label} title={`${title} (${unit})`} cls="text-right">
+                    {label} <span className="font-normal text-slate-400">({unit})</span>
+                  </Th>
+                ))}
+                {/* Ratios maximaux */}
                 {RATIOS.map(({ label, title }) => (
                   <Th key={label} title={title} cls="text-center min-w-[40px]">
                     {label}
                   </Th>
                 ))}
-                {/* Dispenses */}
-                <Th title="Possibilité de négliger les effets du flambement : λ ≤ λ0 ou NEd,c/Ncr ≤ λ0²" cls="text-center">Flamb.</Th>
-                <Th title="Possibilité de négliger les effets du déversement : λLT ≤ λLT,0 ou My,Ed/Mcr ≤ λLT,0²" cls="text-center">Dévers.</Th>
-                {/* MAX */}
                 <Th title="Ratio maximal sur cette combinaison" cls="text-center min-w-[52px]">
                   MAX
                 </Th>
@@ -383,41 +243,22 @@ export default function ResultsFormat2() {
                     <Td cls="text-center">
                       <TypeBadge type={row.section_type} isAngle={row.is_angle} isCircular={row.is_circular} />
                     </Td>
-                    <Td cls="font-medium text-slate-700">
-                      {row.designation}
-                      {row.is_welded && (
-                        <span className="ml-1.5 text-[10px] bg-amber-100 text-amber-700
-                                         px-1 py-0.5 rounded" title="Section soudée (PRS)">
-                          PRS
-                        </span>
-                      )}
-                      {row.fabrication === "F" && (
-                        <span className="ml-1.5 text-[10px] bg-cyan-100 text-cyan-700
-                                         px-1 py-0.5 rounded" title="Section formée à froid">
-                          froid
-                        </span>
-                      )}
-                    </Td>
-                    <Td cls="text-center">
-                      <ClassBadge cls={row.section_class} />
-                    </Td>
-
-                    {/* Efforts internes */}
-                    <Td cls="text-right tabular-nums">{kN(row.NEd_c)}</Td>
-                    <Td cls="text-right tabular-nums">{kNm(row.My_Ed)}</Td>
-                    <Td cls="text-right tabular-nums">{kNm(row.Mz_Ed)}</Td>
-
-                    {/* 14 ratios */}
-                    {RATIOS.map(({ key }) => (
-                      <RatioTd key={key} value={r[key] ?? null} />
-                    ))}
+                    <Td cls="min-w-[100px]"><SectionLabel item={row} /></Td>
 
                     {/* Dispenses */}
                     <Td cls="text-center">{yesNoNA(row.buckling_ignored)}</Td>
                     <Td cls="text-center">{yesNoNA(row.LTB_ignored)}</Td>
 
-                    {/* MAX */}
-                    <MaxRatioTd value={row.max_ratio} />
+                    {/* Efforts et moments maximaux */}
+                    {EFFORTS.map(({ key, fmt }) => (
+                      <Td key={key} cls="text-right tabular-nums">{fmt(row[key])}</Td>
+                    ))}
+
+                    {/* Ratios maximaux */}
+                    {RATIOS.map(({ key }) => (
+                      <RatioTd key={key} value={r[key] ?? null} />
+                    ))}
+                    <MaxRatioTd value={row.max_ratio} size="text-xs" />
                   </tr>
                 )
               })}
@@ -492,23 +333,8 @@ export default function ResultsFormat2() {
       </div>
 
       {/* ── Légende ───────────────────────────────────────────────────────── */}
-      <div className="flex flex-wrap items-center gap-2.5 text-xs text-gray-500 pb-2">
-        <span className="font-medium">Ratios :</span>
-        {[
-          { bg: 'bg-green-50',  text: 'text-ratio-ok',                   label: '< 0,50' },
-          { bg: 'bg-yellow-50', text: 'text-ratio-warning',               label: '0,50 – 0,90' },
-          { bg: 'bg-orange-50', text: 'text-ratio-danger font-semibold',  label: '0,90 – 1,00' },
-          { bg: 'bg-red-100',   text: 'text-ratio-over font-bold',        label: '> 1,00' },
-          { bg: 'bg-gray-50',   text: 'text-gray-300',                    label: 'N/A' },
-        ].map(({ bg, text, label }) => (
-          <span key={label} className={`px-2 py-0.5 rounded ${bg} ${text}`}>{label}</span>
-        ))}
-        <span className="text-gray-300 mx-1">|</span>
-        <span className="text-gray-400">
-          Survolez les en-têtes pour les tooltips EC3.
-        </span>
-      </div>
+      <RatioLegend cls="pb-2" />
 
-    </div>
+    </section>
   )
 }

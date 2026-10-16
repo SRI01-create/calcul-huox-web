@@ -411,6 +411,7 @@ class ElementLCResult(BaseModel):
     designation:  str
     section_class: str   # "1", "2", "3" ou "4" (non vérifié)
     is_welded:     bool = False   # section soudée (PRS) — Phase 31, pour flag Format 2
+    is_custom:     bool = False   # section personnalisée hors catalogue — refonte page Résultats, badge [perso]
     is_angle:      bool = False   # cornière (U uniquement) — Phase 30, pour badge Format 2
     is_circular:   bool = False   # section circulaire (O/X uniquement) — Phase 30, pour badge Format 2
     fabrication:   Optional[str] = None   # "L"/"S"/"F" (U uniquement) — Phase 35, pour badge [froid]
@@ -452,6 +453,7 @@ class RCSummary(BaseModel):
     is_angle:     bool = False   # cornière (U uniquement, sinon False) — Phase 30
     is_circular:  bool = False   # section circulaire (O/X uniquement, sinon False) — Phase 30
     fabrication:  Optional[str] = None   # "L"/"S"/"F" (U uniquement) — Phase 35, pour badge [froid]
+    is_custom:    bool = False           # section personnalisée hors catalogue — badge [perso]
 
     # Tests "oui/non/n.a." Phase 36 — invariants par RC (propriétés de
     # section, indépendants du cas de charge), contrairement à
@@ -467,6 +469,54 @@ class RCSummary(BaseModel):
     tf: Optional[float] = None   # mm (H, U)
     t:  Optional[float] = None   # mm (O)
     A:  Optional[float] = None   # m²
+
+    # ── Refonte page Résultats : champs d'AFFICHAGE uniquement ───────────
+    # Aucun n'est lu par un moteur de calcul : ce sont des valeurs déjà
+    # présentes dans la section (catalogue / perso), la configuration RC ou
+    # le pré-calcul, simplement remontées jusqu'à la page « 3 — Résultats ».
+    # Géométrie complémentaire (mm) — None si non applicable à la famille
+    r:  Optional[float] = None   # mm (H, U)
+    d:  Optional[float] = None   # mm (H, U hors cornières)
+    iy: Optional[float] = None   # mm (U)
+    iz: Optional[float] = None   # mm (U)
+    ym: Optional[float] = None   # mm (U)
+    ys: Optional[float] = None   # mm (U hors cornières)
+    # Caractéristiques (unités internes : m², m⁴, m³, m⁶)
+    Av_y:  Optional[float] = None
+    Av_z:  Optional[float] = None
+    Iy:    Optional[float] = None
+    Wel_y: Optional[float] = None
+    Wpl_y: Optional[float] = None   # None pour les cornières
+    Iz:    Optional[float] = None
+    Wel_z: Optional[float] = None
+    Wpl_z: Optional[float] = None   # None pour les cornières
+    It:    Optional[float] = None
+    Iw:    Optional[float] = None   # H, U (m⁶)
+    Sw:    Optional[float] = None   # Sω — H (m⁴)
+    Sw_w:  Optional[float] = None   # Sω,w — U (m⁴)
+    # Trous
+    PTC:     str = "P"              # "P" pleine · "T" trouée A/B · "C" trouée C
+    A_trou:  Optional[float] = None  # m²
+    Af_trou: Optional[float] = None  # m²
+    Anet:    Optional[float] = None  # m²
+    Af_net:  Optional[float] = None  # m² (H, U trouées)
+    kr:      float = 1.0
+    # Flambement
+    L:   Optional[float] = None      # m
+    cry: Optional[float] = None
+    crz: Optional[float] = None
+    crT: Optional[float] = None
+    buckling_curve_y: Optional[str] = None
+    buckling_curve_z: Optional[str] = None
+    lambda_max: Optional[float] = None   # λ = max(λ̄y ; λ̄z)
+    # Déversement (H, U)
+    Lm:         Optional[float] = None   # m
+    zG:         Optional[float] = None   # mm
+    ltb_config: Optional[str]   = None   # "1".."6" ou valeur numérique de Mcr imposé (N.m)
+    # Charges critiques (N)
+    Ncr_min: Optional[float] = None
+    Ncr_T:   Optional[float] = None      # U
+    Ncr_TF:  Optional[float] = None      # U
 
     # ── Matériau ─────────────────────────────────────────────────────────
     material_designation: str    = ""

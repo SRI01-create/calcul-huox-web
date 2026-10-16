@@ -5,10 +5,11 @@ import MaterialForm    from './components/MaterialForm'
 import ConfigTransfer  from './components/ConfigTransfer'
 import FileUpload      from './components/FileUpload'
 import CalculateButton from './components/CalculateButton'
-// Phase 22 : ResultsFormat1 activé
-import ResultsFormat1  from './components/ResultsFormat1'
-// Phase 23 : ResultsFormat2 activé
-import ResultsFormat2  from './components/ResultsFormat2'
+// Refonte page « 3 — Résultats » : en-tête commun · fiches par RC · synthèse · détail
+import ResultsOverview  from './components/ResultsOverview'
+import ResultsRCSheets  from './components/ResultsRCSheets'
+import ResultsFormat1   from './components/ResultsFormat1'
+import ResultsFormat2   from './components/ResultsFormat2'
 
 const STEPS = [
   { id: 'config',  label: '1 — Configuration RC & Matériaux' },
@@ -74,15 +75,8 @@ export default function App() {
         )}
         {activeStep === 'results' && (
           <div>
-            <div className="mb-6">
-              <h2 className="text-lg font-semibold text-slate-800 mb-1">
-                Synthèse par groupe RC
-              </h2>
-              <p className="text-sm text-gray-500">
-                Format 1 — Un résultat par groupe RC. Les 14 ratios sont les valeurs
-                maximales sur l'ensemble des éléments et des cas de charge du groupe.
-              </p>
-            </div>
+            <ResultsOverview />
+            <ResultsRCSheets />
             <ResultsFormat1 />
             <ResultsFormat2 />
           </div>

@@ -97,6 +97,7 @@ def precompute(rc: RCConfig, mat: MaterialConfig) -> dict:
         "gM0": gM0, "gM1": gM1, "gM2": gM2,
         "nt_rd": nt_rd, "nc_rd": nc_rd,
         "my_c": my_c, "mz_c": mz_c, "vy_pl": vy_pl, "vz_pl": vz_pl,
+        "Anet": A,   # Refonte page Résultats — X : jamais de trous, Anet = A
         **stab,
     }
 
@@ -198,6 +199,7 @@ def _check_row(row: pd.Series, pre: dict, rc: RCConfig) -> ElementLCResult:
         rc_number=rc.rc_number, section_type=rc.section_type,
         designation=rc.designation, section_class=str(classe),
         is_welded=pre["is_welded"], is_circular=pre["is_circular"], fabrication=pre["fab"],
+        is_custom=rc.custom_section is not None,
         buckling_ignored=buckling_ignored,
         NEd_t=NEd_t, NEd_c=NEd_c, Vy_Ed=Vy, Vz_Ed=Vz,
         TEd=TEd, My_Ed=My, Mz_Ed=Mz,

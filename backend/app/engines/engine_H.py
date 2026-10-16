@@ -125,6 +125,7 @@ def precompute(rc: RCConfig, mat: MaterialConfig) -> dict:
             Af_net, rc.Af_trou or 0.0, fy, mat.fu, gM0, gM2, rc.kr)
     else:
         Anet   = A
+        Af_net = None
         ignore_tf_holes = True   # pas de trous → rien à ignorer, "oui" par convention (cf. Excel)
 
     # ── Résistances pures (Phase 7) ───────────────────────────────────────
@@ -198,6 +199,10 @@ def precompute(rc: RCConfig, mat: MaterialConfig) -> dict:
         "chi_LT_val":    p13["chi_LT_val"],
         # Trous en semelle tendue (Phase 36, colonne AQ) — invariant par RC
         "ignore_tf_holes": ignore_tf_holes,
+        # Refonte page Résultats — aires nettes exposées pour affichage (déjà calculées)
+        "Anet": Anet, "Af_net": Af_net,
+        # H : pas de flambement torsion-flexion → Ncr,T / Ncr,TF toujours None
+        "Ncr_T": None, "Ncr_TF": None,
     }
 
 
@@ -345,6 +350,7 @@ def _check_row(
         designation  = rc.designation,
         section_class= str(classe),
         is_welded    = pre["is_welded"],
+        is_custom    = rc.custom_section is not None,
         fabrication  = pre["fab"],
         buckling_ignored = buckling_ignored,
         LTB_ignored       = LTB_ignored,

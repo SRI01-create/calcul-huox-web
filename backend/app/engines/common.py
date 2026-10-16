@@ -199,6 +199,8 @@ def compute_stability(
         "lambda_bar_max": p11["lambda_bar_max"],
         "lambda_0":       p10["lambda_0"],   # Phase 36 — test "négliger le flambement"
         "Nb_Rd_TF":       p11["Nb_Rd_TF"],
+        "Ncr_T":          p11["Ncr_T"],    # Refonte page Résultats — affichage seul
+        "Ncr_TF":         p11["Ncr_TF"],   # Refonte page Résultats — affichage seul
         "Mcr":            Mcr,
         "Mb_Rd":          p13["Mb_Rd"],
         "lambda_bar_LT":  p13["lambda_bar_LT"],

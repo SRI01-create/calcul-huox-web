@@ -144,6 +144,7 @@ def precompute(rc: RCConfig, mat: MaterialConfig) -> dict:
         "nt_rd": nt_rd, "nc_rd": nc_rd,
         "my_c": my_c, "mz_c": mz_c, "vy_pl": vy_pl, "vz_pl": vz_pl,
         "ignore_tf_holes": ignore_tf_holes,   # Phase 36, colonne AQ
+        "Anet": Anet, "Af_net": Af_net,       # Refonte page Résultats — affichage seul
         **stab,   # inclut désormais "lambda_0" (Phase 36, colonne CE)
     }
 
@@ -255,6 +256,7 @@ def _check_row(row: pd.Series, pre: dict, rc: RCConfig) -> ElementLCResult:
         rc_number=rc.rc_number, section_type=rc.section_type,
         designation=rc.designation, section_class=str(classe),
         is_welded=pre["is_welded"], is_angle=pre["is_angle"],
+        is_custom=rc.custom_section is not None,
         fabrication=pre["fab"],
         NEd_t=NEd_t, NEd_c=NEd_c, Vy_Ed=Vy, Vz_Ed=Vz,
         TEd=TEd, My_Ed=My, Mz_Ed=Mz,
