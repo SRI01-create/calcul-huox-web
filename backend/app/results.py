@@ -30,6 +30,7 @@ from .models import (
     AllRatios, CalculationResponse, ElementLCResult,
     MaterialConfig, RCConfig, RCSummary,
 )
+from .engines.common import effective_kr
 from .engines.dispatch import precompute_rc, run_all
 
 
@@ -116,6 +117,8 @@ def build_rc_summary(
     # X : jamais de trous (engine_X ignore PTC) → on affiche "P" quoi qu'il y ait en config
     ptc_eff = "P" if rc.section_type == "X" else rc.PTC
     holed   = ptc_eff != "P"
+    # Af_trou / Af_net : uniquement H et U hors cornières (semelle tendue)
+    has_flange_holes = holed and is_HU and not is_angle
     lam_vals = [v for v in (pre.get("lambda_bar_y"), pre.get("lambda_bar_z")) if v is not None]
     lambda_max = max(lam_vals) if lam_vals else None
 
@@ -155,10 +158,10 @@ def build_rc_summary(
         # ── Trous ────────────────────────────────────────────────────────
         PTC     = ptc_eff,
         A_trou  = rc.A_trou  if holed else None,
-        Af_trou = rc.Af_trou if (holed and is_HU) else None,
+        Af_trou = rc.Af_trou if has_flange_holes else None,
         Anet    = pre.get("Anet") if holed else None,
-        Af_net  = pre.get("Af_net") if (holed and is_HU) else None,
-        kr      = rc.kr,
+        Af_net  = pre.get("Af_net") if has_flange_holes else None,
+        kr      = effective_kr(rc, material),
 
         # ── Flambement / déversement (paramètres saisis) ─────────────────
         L   = rc.L, cry = rc.cry, crz = rc.crz,
