@@ -26,6 +26,26 @@ from ..ec3.ltb_mcr import compute_Mcr
 from ..ec3.ltb_resistance import ltb_resistance
 
 
+# ─── Coefficient kr (sections trouées) ───────────────────────────────────────
+
+# EN 1993-1-1 §6.2.3(2)b) : Nu,Rd = 0,9·Anet·fu/γM2 — le « 0,9 » est fixe pour
+# l'acier carbone. Pour l'inox (EN 1993-1-4), il est remplacé par un
+# coefficient kr variable, saisi sur la RC (champ rc.kr).
+KR_CARBONE = 0.9
+
+
+def effective_kr(rc, mat) -> float:
+    """
+    Coefficient kr réellement utilisé dans les calculs de section trouée
+    (Nt,Rd et test « trous en semelle tendue »).
+
+    - acier carbone : toujours 0,9 (valeur normative) — rc.kr est ignoré,
+      quelle que soit la valeur éventuellement présente dans la config ;
+    - acier inoxydable : valeur saisie sur la RC (rc.kr).
+    """
+    return rc.kr if mat.steel_type == "inox" else KR_CARBONE
+
+
 # ─── Ratios robustes classe 4 ────────────────────────────────────────────────
 
 def ratio_N_combined(

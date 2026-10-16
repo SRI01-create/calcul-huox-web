@@ -32,7 +32,7 @@ from ..ec3.torsion import tau_solid_X, Vpl_T_Rd_UOX
 from ..ec3.section_combined import MV_Rd, MN_Rd_X, ratio_combined_X
 from ..ec3.interaction import interaction_factors
 from .common import (
-    compute_stability,
+    compute_stability, effective_kr,
     ratio_N_combined, n_N_factor,
     ratio_Nb_flexural, ratio_LTB,
     overall_max,
@@ -47,6 +47,7 @@ def precompute(rc: RCConfig, mat: MaterialConfig) -> dict:
     sec   = resolve_section(rc)
     fy    = mat.fy; E = mat.E; G = mat.G
     is_ss = (mat.steel_type == "inox")
+    kr    = effective_kr(rc, mat)   # 0,9 fixe (carbone) · rc.kr (inox)
     gM0, gM1, gM2 = gamma_M(is_ss)
     eps   = epsilon(fy, E, is_ss)
     fab   = "S" if sec["is_welded"] else "L"   # Phase 31 — déduit du catalogue ; sans effet
@@ -67,7 +68,7 @@ def precompute(rc: RCConfig, mat: MaterialConfig) -> dict:
     classe = int(rc.manual_section_class) if rc.manual_section_class else classe_auto
 
     # ── Résistances pures (Phase 7) — pas de trous pour sections pleines ──
-    nt_rd = Nt_Rd(classe, A, A, fy, mat.fu, gM0, gM2, "P", rc.kr)
+    nt_rd = Nt_Rd(classe, A, A, fy, mat.fu, gM0, gM2, "P", kr)
     nc_rd = Nc_Rd(classe, A, fy, gM0)
     my_c  = Mc_Rd(classe, Wpl_y, Wel_y, fy, gM0)
     mz_c  = Mc_Rd(classe, Wpl_z, Wel_z, fy, gM0)

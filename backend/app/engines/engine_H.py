@@ -68,7 +68,7 @@ from ..ec3.section_combined import (
     MV_Rd, My_N_Rd_HU, Mz_N_Rd_HU, ratio_combined_H,
 )
 from ..ec3.buckling_flexural import flexural_buckling
-from .common import ratio_N_combined, ratio_Nb_flexural
+from .common import ratio_N_combined, ratio_Nb_flexural, effective_kr
 from ..ec3.ltb_mcr import compute_Mcr
 from ..ec3.ltb_resistance import ltb_resistance
 from ..ec3.interaction import interaction_factors
@@ -88,6 +88,7 @@ def precompute(rc: RCConfig, mat: MaterialConfig) -> dict:
     E     = mat.E
     G     = mat.G
     is_ss = (mat.steel_type == "inox")
+    kr    = effective_kr(rc, mat)   # 0,9 fixe (carbone) · rc.kr (inox)
     gM0, gM1, gM2 = gamma_M(is_ss)
     eps   = epsilon(fy, E, is_ss)
     fab   = "S" if sec["is_welded"] else "L"   # Phase 31 — déduit du catalogue (plus de champ manuel)
@@ -122,14 +123,14 @@ def precompute(rc: RCConfig, mat: MaterialConfig) -> dict:
         Anet  = na["Anet"]
         Af_net= na["Af_net"]
         ignore_tf_holes = can_ignore_tension_flange_holes(
-            Af_net, rc.Af_trou or 0.0, fy, mat.fu, gM0, gM2, rc.kr)
+            Af_net, rc.Af_trou or 0.0, fy, mat.fu, gM0, gM2, kr)
     else:
         Anet   = A
         Af_net = None
         ignore_tf_holes = True   # pas de trous → rien à ignorer, "oui" par convention (cf. Excel)
 
     # ── Résistances pures (Phase 7) ───────────────────────────────────────
-    nt_rd = Nt_Rd(classe, A, Anet, fy, mat.fu, gM0, gM2, rc.PTC, rc.kr)
+    nt_rd = Nt_Rd(classe, A, Anet, fy, mat.fu, gM0, gM2, rc.PTC, kr)
     nc_rd = Nc_Rd(classe, A, fy, gM0)
     my_c  = Mc_Rd(classe, Wpl_y, Wel_y, fy, gM0)
     mz_c  = Mc_Rd(classe, Wpl_z, Wel_z, fy, gM0)
