@@ -720,6 +720,34 @@ function RCNumberField({ value, onChange }) {
   )
 }
 
+// ─── Cornière ? (section U du catalogue) ────────────────────────────────────────
+// Le formulaire « Réduction de section » doit savoir si la section est une
+// cornière (Af_trou n'a de sens que pour les H et U hors cornières). Pour une
+// section personnalisée, l'info est dans custom_section.is_angle ; pour une
+// désignation du catalogue, on la lit une fois via l'API (cache par désignation).
+const angleCache = new Map()   // 'U:<désignation>' → true | false
+
+function useCatalogueIsAngle(sectionType, designation, isCustom) {
+  const key = `${sectionType}:${designation}`
+  const enabled = sectionType === 'U' && !isCustom && !!designation
+  const [value, setValue] = useState(() => (enabled ? angleCache.get(key) : undefined))
+
+  useEffect(() => {
+    if (!enabled) { setValue(undefined); return }
+    if (angleCache.has(key)) { setValue(angleCache.get(key)); return }
+    let cancelled = false
+    fetchSectionProperties('U', designation)
+      .then((data) => {
+        angleCache.set(key, !!data.is_angle)
+        if (!cancelled) setValue(!!data.is_angle)
+      })
+      .catch(() => { if (!cancelled) setValue(undefined) })
+    return () => { cancelled = true }
+  }, [enabled, key, designation])
+
+  return enabled ? value : undefined
+}
+
 // ─── Carte RC ───────────────────────────────────────────────────────────────────
 
 export default function RCRow({ rc }) {
@@ -732,6 +760,15 @@ export default function RCRow({ rc }) {
   const isHU = rc.section_type === 'H' || rc.section_type === 'U'
   const isU = rc.section_type === 'U'
   const isCustom = rc.custom_section != null
+  // Réduction de section : champs affichés selon la famille et la nuance
+  const catalogueIsAngle = useCatalogueIsAngle(rc.section_type, rc.designation, isCustom)
+  const isAngleRC = isU && (isCustom ? !!rc.custom_section.is_angle : catalogueIsAngle === true)
+  // Af_trou (trous en semelle tendue) : H et U hors cornières uniquement.
+  // Pendant le chargement de l'info cornière (U catalogue), on le masque par prudence.
+  const showAfTrou = rc.section_type === 'H'
+    || (isU && (isCustom ? !isAngleRC : catalogueIsAngle === false))
+  // kr : inox uniquement — pour l'acier carbone le calcul impose 0,9 (EC3-1-1 §6.2.3(2)b)
+  const showKr = material?.steel_type === 'inox'
   const ltbIsPredefined = /^[1-6]$/.test(String(rc.ltb_config).trim())
 
   const handleSectionTypeChange = (newType) => {
@@ -934,10 +971,14 @@ export default function RCRow({ rc }) {
               <>
                 <NumField label="A_trou" unit="m²" value={rc.A_trou ?? ''} step="0.0001" min="0"
                   onChange={(v) => set({ A_trou: v })} />
-                <NumField label="Af_trou" unit="m²" value={rc.Af_trou ?? ''} step="0.0001" min="0"
-                  onChange={(v) => set({ Af_trou: v })} />
-                <NumField label="kr" value={rc.kr} step="0.05" min="0" max="1"
-                  onChange={(v) => set({ kr: v })} />
+                {showAfTrou && (
+                  <NumField label="Af_trou" unit="m²" value={rc.Af_trou ?? ''} step="0.0001" min="0"
+                    onChange={(v) => set({ Af_trou: v })} />
+                )}
+                {showKr && (
+                  <NumField label="kr" value={rc.kr} step="0.05" min="0" max="1"
+                    onChange={(v) => set({ kr: v })} />
+                )}
               </>
             )}
           </Group>
