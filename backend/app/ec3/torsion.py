@@ -7,7 +7,7 @@ des feuilles H / U / O / X (ligne 61 du fichier Excel).
 Fonctions publiques
 -------------------
     tau_w_H(TEd, Sw, IW, tf_mm)                             → float
-    tau_mixed_U(TEd, Sw_w, IW, tw_mm, tf_mm, It, is_angle)  → float | None
+    tau_mixed_U(TEd, Sw_w, IW, tw_mm, tf_mm, It)            → float
     tau_bredt_O(TEd, h_mm, b_mm, t_mm, is_circular)          → float
     tau_solid_X(TEd, h_mm, b_mm, is_circular)                → float
     Vpl_T_Rd_H  (Vpl_Rd, tau, fy, gM0)                      → float | None
@@ -29,7 +29,10 @@ Résumé des formules Excel
 --------------------------
 BB (H)   : ABS((TEd*Sw/IW/(tf/1000))/1e6)
 BB (U canal) : MAX(|TEd*Sw_w/IW/min_t_m|, |TEd*max_t_m/It|) / 1e6
-BB (U cornière) : IF(TEd=0, 0, "X")
+BB (U cornière) : même formule que le canal (seul Sw_w diffère) — décision
+                  de Sem, 19/10/2026. L'Excel renvoie IF(TEd=0, 0, "X") pour
+                  les cornières : écart volontaire, l'Excel n'est pas la
+                  référence sur ce point.
 BB (O Tci)  : ABS(TEd/(2*(t/1000)*2π*((h-t)/2/1000)²)/1e6)
 BB (O rect) : ABS(TEd/(2*(t/1000)*(h-t)_m*(b-t)_m)/1e6)
 BB (X Pci)  : ABS(16*TEd/(π*(h/1000)³)/1e6)
@@ -69,14 +72,12 @@ def tau_mixed_U(
     tw_mm: float,
     tf_mm: float,
     It: float,
-    is_angle: bool = False,
-) -> float | None:
+) -> float:
     """
-    Torsion mixte (gauchissement + St. Venant) — section U/canal [MPa].
+    Torsion mixte (gauchissement + St. Venant) — section U, canaux ET cornières [MPa].
 
-    Formule Excel :
-      Cornière : IF(TEd=0, 0, "X")       → None si TEd ≠ 0
-      Canal    : MAX( |TEd·Sw_w/IW/min_t_m|,  |TEd·max_t_m/It| ) / 1e6
+    Formule (identique pour canaux et cornières ; seul Sw_w diffère) :
+      MAX( |TEd·Sw_w/IW/min_t_m|,  |TEd·max_t_m/It| ) / 1e6
         min_t_m = MIN(tw, tf)/1000   (épaisseur minimale)
         max_t_m = MAX(tw, tf)/1000   (épaisseur maximale)
 
@@ -85,10 +86,10 @@ def tau_mixed_U(
     Sw_w  : moment sectoriel d'âme (m⁴)  — col. AK feuille U
     IW    : constante de gauchissement (m⁶) — col. AJ
     It    : constante de torsion St. Venant (m⁴) — col. AI
-    """
-    if is_angle:
-        return 0.0 if TEd == 0.0 else None   # "X" si torsion non nulle
 
+    Aucun garde-fou volontairement : Sw_w, IW et It doivent être fournis et
+    IW, It > 0 (sinon exception Python, pas de résultat silencieux).
+    """
     min_t_m = min(tw_mm, tf_mm) / 1000.0
     max_t_m = max(tw_mm, tf_mm) / 1000.0
     tau_gauchissement = abs(TEd * Sw_w / IW / min_t_m) / 1e6
@@ -199,7 +200,7 @@ def Vpl_T_Rd_UOX(
     τRd = fy / (√3 · γM0)
 
     Retourne None si :
-      - tau est None (propagation du "X" — cornière avec torsion)
+      - tau est None (valeur non calculable ; ne concerne plus les U/cornières)
       - Vpl*(1-τ/τRd) ≤ 0 (torsion épuise la capacité)
     """
     if tau is None:
