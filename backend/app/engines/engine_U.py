@@ -4,7 +4,7 @@ Phase 16 — Moteur de calcul pour sections U (canaux UPN/UPE/PFC et cornières 
 Différences vs engine_H
 ─────────────────────────
     • Classification : section_class_U (gère cornières via détection "L ")
-    • Torsion         : tau_mixed_U (canal : Sw_w/IW + St-Venant ; cornière : None si TEd≠0)
+    • Torsion         : tau_mixed_U (Sw_w/IW + St-Venant — même formule canaux et cornières)
     • Stabilité       : torsional_buckling (Phase 11) actif → Nb,Rd,TF, λ̄_max complet
     • Déversement     : actif comme pour H (Mcr, Mb,Rd via ltb_resistance, section_type="U")
     • Section combinée: ratio_combined_U (formule linéaire en classe 1/2,
@@ -15,8 +15,9 @@ Cornières (is_angle)
 ─────────────────────
     • Wpl_y = Wpl_z = None → Mc_Rd retourne None si classe ≤ 2 (jamais le cas,
       classe max = 3 pour les cornières) ; classe 3 → Mc_Rd via Wel, OK.
-    • tau_mixed_U(is_angle=True) → None si TEd≠0 (vérification torsion hors
-      portée), 0.0 sinon → ratio_T = None ou 0.0 en conséquence.
+    • Torsion : tau_mixed_U s'applique aux cornières comme aux canaux (seul
+      Sw_w diffère) — plus de cas particulier, ratio_T/ratio_VyT/ratio_VzT
+      sont calculés normalement.
     • can_ignore_shear_buckling(is_angle=True) → toujours True.
 
 Architecture identique à engine_H : _precompute() une fois par RC,
@@ -172,9 +173,9 @@ def _check_row(row: pd.Series, pre: dict, rc: RCConfig) -> ElementLCResult:
     ratio_vy = abs(Vy) / vy_pl if vy_pl else None
     ratio_vz = abs(Vz) / vz_pl if vz_pl else None
 
-    # ── Phase 8 : torsion mixte canal / cornière ───────────────────────────
+    # ── Phase 8 : torsion mixte (canaux et cornières, même formule) ────────
     tau = tau_mixed_U(TEd, pre["Sw_w"], pre["IW"], pre["tw"], pre["tf"],
-                      pre["It"], is_angle=pre["is_angle"])
+                      pre["It"])
     vy_T = Vpl_T_Rd_UOX(vy_pl, tau, fy, gM0)
     vz_T = Vpl_T_Rd_UOX(vz_pl, tau, fy, gM0)
 
