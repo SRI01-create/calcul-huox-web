@@ -313,6 +313,7 @@ function CustomSectionForm({ sectionType, cs, onChange, ys, onYsChange }) {
       const Aval = num(cs.A), Iyval = num(cs.Iy), Izval = num(cs.Iz)
       const raw = {
         is_circular: !!cs.is_circular,
+        is_angle: sectionType === 'U' && !!cs.is_angle,
         h: num(cs.h), b: num(cs.b), tw: num(cs.tw), tf: num(cs.tf), r: num(cs.r),
         ys: num(ys),
         A: Aval !== undefined ? Aval * CM2_TO_M2 : undefined,
@@ -324,7 +325,7 @@ function CustomSectionForm({ sectionType, cs, onChange, ys, onYsChange }) {
         .catch(() => setSuggestions({}))
     }, 300)
     return () => clearTimeout(debounceRef.current)
-  }, [sectionType, cs.is_circular, cs.h, cs.b, cs.tw, cs.tf, cs.r, ys, cs.A, cs.Iy, cs.Iz])
+  }, [sectionType, cs.is_circular, cs.is_angle, cs.h, cs.b, cs.tw, cs.tf, cs.r, ys, cs.A, cs.Iy, cs.Iz])
 
   const set = (field) => (v) => onChange({ [field]: v })
 
@@ -360,8 +361,8 @@ function CustomSectionForm({ sectionType, cs, onChange, ys, onYsChange }) {
             onChange={(v) => onChange({ is_welded: v })} />
         )}
         {sectionType === 'U' && (
-          <CheckboxField label="Cornière" checked={cs.is_angle}
-            onChange={(v) => onChange({ is_angle: v })} />
+          <CheckboxField label="Cornière (égale)" checked={cs.is_angle}
+            onChange={(v) => onChange(v ? { is_angle: true, b: cs.h, tf: cs.tw } : { is_angle: false })} />
         )}
         {(sectionType === 'O' || isX) && (
           <CheckboxField label="Section ronde" checked={cs.is_circular}
@@ -371,21 +372,34 @@ function CustomSectionForm({ sectionType, cs, onChange, ys, onYsChange }) {
 
       {/* Dimensions ------------------------------------------------------ */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-        <NumField label="h" unit="mm" value={cs.h} min="0" onChange={set('h')} />
-        {!cs.is_circular && (
-          <NumField label="b" unit="mm" value={cs.b} min="0" onChange={set('b')} />
-        )}
-        {sectionType === 'O' && (
-          <NumField label="t" unit="mm" value={cs.t} min="0" onChange={set('t')} />
-        )}
-        {(sectionType === 'H' || sectionType === 'U') && (
+        {isAngle ? (
+          // Cornière égale : l (longueur des ailes) alimente h ET b, t
+          // (épaisseur) alimente tw ET tf — le reste du code (moteur, guide
+          // de flambement, aperçu) continue de lire h/b/tw/tf, toujours égaux.
           <>
-            <NumField label="tw" unit="mm" value={cs.tw} min="0" onChange={set('tw')} />
-            <NumField label="tf" unit="mm" value={cs.tf} min="0" onChange={set('tf')} />
+            <NumField label="l" unit="mm" value={cs.h} min="0"
+              onChange={(v) => onChange({ h: v, b: v })} />
+            <NumField label="t" unit="mm" value={cs.tw} min="0"
+              onChange={(v) => onChange({ tw: v, tf: v })} />
             <NumField label="r" unit="mm" value={cs.r} min="0" onChange={set('r')} />
-            {!isAngle && (
-              <SuggestField label="d" unit="mm" value={cs.d} onChange={set('d')}
-                suggestion={suggestDisplay('d')} onApply={applySuggestion('d')} />
+          </>
+        ) : (
+          <>
+            <NumField label="h" unit="mm" value={cs.h} min="0" onChange={set('h')} />
+            {!cs.is_circular && (
+              <NumField label="b" unit="mm" value={cs.b} min="0" onChange={set('b')} />
+            )}
+            {sectionType === 'O' && (
+              <NumField label="t" unit="mm" value={cs.t} min="0" onChange={set('t')} />
+            )}
+            {(sectionType === 'H' || sectionType === 'U') && (
+              <>
+                <NumField label="tw" unit="mm" value={cs.tw} min="0" onChange={set('tw')} />
+                <NumField label="tf" unit="mm" value={cs.tf} min="0" onChange={set('tf')} />
+                <NumField label="r" unit="mm" value={cs.r} min="0" onChange={set('r')} />
+                <SuggestField label="d" unit="mm" value={cs.d} onChange={set('d')}
+                  suggestion={suggestDisplay('d')} onApply={applySuggestion('d')} />
+              </>
             )}
           </>
         )}
@@ -443,22 +457,20 @@ function CustomSectionForm({ sectionType, cs, onChange, ys, onYsChange }) {
             <SuggestField label="iz" unit="mm" value={cs.iz} onChange={set('iz')}
               suggestion={suggestDisplay('iz')} onApply={applySuggestion('iz')} />
             <NumField label="ym" unit="mm" value={cs.ym} onChange={set('ym')} />
-            <NumField label="ys" unit="mm" value={ys} onChange={onYsChange} />
+            {!isAngle && <NumField label="ys" unit="mm" value={ys} onChange={onYsChange} />}
           </>
         )}
       </div>
 
-      {/* Moment sectoriel (H : Sw · U : Sw,w) — a besoin de ys ci-dessus --- */}
+      {/* Moment sectoriel (H : Sw · U : Sw,w, a besoin de ys · cornière : Sw,max) --- */}
       {(sectionType === 'H' || sectionType === 'U') && (
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 mt-3">
-          {!isAngle && (
-            <SuggestField label={sectionType === 'H' ? 'Sw' : 'Sw,w'} unit="cm⁴" value={cs.Sw} onChange={set('Sw')}
-              suggestion={suggestDisplay('Sw', CM4_TO_M4)} onApply={applySuggestion('Sw', CM4_TO_M4)} />
-          )}
+          <SuggestField label={sectionType === 'H' ? 'Sw' : isAngle ? 'Sw,max' : 'Sw,w'} unit="cm⁴" value={cs.Sw} onChange={set('Sw')}
+            suggestion={suggestDisplay('Sw', CM4_TO_M4)} onApply={applySuggestion('Sw', CM4_TO_M4)} />
         </div>
       )}
 
-      {sectionType === 'U' && (
+      {sectionType === 'U' && !isAngle && (
         <p className="mt-3 text-xs text-gray-400">
           "ys" ne sert qu'à calculer la suggestion de Sw,w, jamais utilisé par le calcul lui-même.
         </p>
