@@ -249,9 +249,11 @@ def resolve_section(rc) -> dict:
         # NB : "r" peut être None même hors cornière — certains profils U
         # à froid du catalogue n'ont pas de rayon de raccordement renseigné
         # (ex. "C 100 x 10.8"), donc pas exigé ici non plus.
-        require("b", "tw", "tf", "IW", "iy", "iz", "ym")
+        # Sw (= Sw,w canal / Sw,max cornière) est requis aussi pour les
+        # cornières depuis que leur torsion suit la même formule que les U.
+        require("b", "tw", "tf", "IW", "iy", "iz", "ym", "Sw")
         if not cs.is_angle:
-            require("d", "Wpl_y", "Wpl_z", "Sw")
+            require("d", "Wpl_y", "Wpl_z")
     elif section_type == "O":
         require("t", "Wpl_y", "Wpl_z")
         if not cs.is_circular:

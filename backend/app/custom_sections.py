@@ -74,6 +74,24 @@ def warping_statical_moment_U_m4(b_mm: float, h_mm: float, tf_mm: float, ys_mm: 
     return Sw_w_mm4 * MM4_TO_M4
 
 
+# ── Cornière égale (U, is_angle) ─────────────────────────────────────────────
+
+def shear_area_angle_m2(l_mm: float, t_mm: float) -> float:
+    """Av,y = Av,z = l·t (aire d'une aile). Cornière égale (ailes l, épaisseur t)."""
+    return l_mm * t_mm * MM2_TO_M2
+
+
+def warping_statical_moment_angle_m4(l_mm: float, t_mm: float) -> float:
+    """
+    Sw,max = (l·l·t/4)·(l+t). Cornière égale (ailes l, épaisseur t).
+
+    Remplace Sw,w (U) pour les cornières : aucune donnée de position du centre
+    de cisaillement (ys) n'est nécessaire.
+    """
+    Sw_mm4 = (l_mm * l_mm * t_mm / 4) * (l_mm + t_mm)
+    return Sw_mm4 * MM4_TO_M4
+
+
 # ── Rayons de giration — U ────────────────────────────────────────────────────
 
 def radius_of_gyration_mm(I_m4: float, A_m2: float) -> float:

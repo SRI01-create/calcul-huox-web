@@ -147,12 +147,13 @@ class CustomSectionSuggestRequest(BaseModel):
     """
     section_type: SectionType
     is_circular: bool = False
+    is_angle: bool = False   # U seulement — cornière égale (l = h, t = tw)
     h:  Optional[float] = Field(None, gt=0)
     b:  Optional[float] = Field(None, gt=0)
     tw: Optional[float] = Field(None, gt=0)
     tf: Optional[float] = Field(None, gt=0)
     r:  Optional[float] = Field(None, ge=0)
-    ys: Optional[float] = Field(None, gt=0)   # U seulement — pour la suggestion de Sw,w
+    ys: Optional[float] = Field(None, gt=0)   # U hors cornières — pour la suggestion de Sw,w
     A:  Optional[float] = Field(None, gt=0)   # m² — déjà converti côté frontend
     Iy: Optional[float] = Field(None, gt=0)   # m⁴
     Iz: Optional[float] = Field(None, gt=0)   # m⁴

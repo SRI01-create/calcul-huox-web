@@ -68,6 +68,7 @@ from .custom_sections import (
     shear_area_O_rect_m2, shear_area_O_round_m2, shear_area_web_m2,
     solid_rect_properties, solid_round_properties,
     warping_statical_moment_H_m4, warping_statical_moment_U_m4,
+    shear_area_angle_m2, warping_statical_moment_angle_m4,
 )
 from .models import (
     CalculationRequest, CalculationResponse, CustomSectionSuggestRequest, SteelType,
@@ -349,6 +350,17 @@ def suggest_custom_section_properties(req: CustomSectionSuggestRequest):
             out["Av_y"] = shear_area_flange_m2(r.b, r.tf)
         if r.h is not None and r.tw is not None:
             out["Av_z"] = shear_area_web_m2(r.h, r.tw)
+
+    elif r.section_type == "U" and r.is_angle:
+        # Cornière égale : l = h, t = tw (le frontend envoie h = b = l et
+        # tw = tf = t). Pas de d ni de ys ; Sw,max remplace Sw,w.
+        if r.h is not None and r.tw is not None:
+            out["Sw"] = warping_statical_moment_angle_m4(r.h, r.tw)
+            out["Av_y"] = out["Av_z"] = shear_area_angle_m2(r.h, r.tw)
+        if r.Iy is not None and r.A is not None:
+            out["iy"] = radius_of_gyration_mm(r.Iy, r.A)
+        if r.Iz is not None and r.A is not None:
+            out["iz"] = radius_of_gyration_mm(r.Iz, r.A)
 
     elif r.section_type == "U":
         if r.h is not None and r.tf is not None and r.r is not None:
