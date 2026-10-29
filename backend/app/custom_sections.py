@@ -77,8 +77,13 @@ def warping_statical_moment_U_m4(b_mm: float, h_mm: float, tf_mm: float, ys_mm: 
 # ── Cornière égale (U, is_angle) ─────────────────────────────────────────────
 
 def shear_area_angle_m2(l_mm: float, t_mm: float) -> float:
-    """Av,y = Av,z = l·t (aire d'une aile). Cornière égale (ailes l, épaisseur t)."""
-    return l_mm * t_mm * MM2_TO_M2
+    """
+    Av,y = Av,z = l·t/√2. Cornière égale (ailes l, épaisseur t).
+
+    Même formule que la colonne Av_y du catalogue U pour les cornières
+    (Av_z = Av_y).
+    """
+    return l_mm * t_mm / (2 ** 0.5) * MM2_TO_M2
 
 
 def warping_statical_moment_angle_m4(l_mm: float, t_mm: float) -> float:
