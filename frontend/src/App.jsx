@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { Suspense, lazy, useState } from 'react'
 
 import RCForm          from './components/RCForm'
 import MaterialForm    from './components/MaterialForm'
@@ -10,11 +10,15 @@ import ResultsOverview  from './components/ResultsOverview'
 import ResultsRCSheets  from './components/ResultsRCSheets'
 import ResultsFormat1   from './components/ResultsFormat1'
 import ResultsFormat2   from './components/ResultsFormat2'
+// Onglet « Présentation & guide » : chargé à la demande (n'alourdit pas l'outil de calcul)
+const PresentationPage = lazy(() => import('./components/PresentationPage'))
 
 const STEPS = [
   { id: 'config',  label: '1 — Configuration RC & Matériaux' },
   { id: 'import',  label: '2 — Import fichiers & Calcul'     },
   { id: 'results', label: '3 — Résultats'                    },
+  // Hors étapes de calcul : non numéroté, à droite
+  { id: 'guide',   label: 'Présentation & guide', right: true },
 ]
 
 export default function App() {
@@ -32,12 +36,14 @@ export default function App() {
       </header>
 
       {/* Navigation par étapes */}
-      <nav className="bg-white border-b border-gray-200 px-6 py-2 flex gap-6">
+      <nav className="bg-white border-b border-gray-200 px-6 py-2 flex gap-6 overflow-x-auto">
         {STEPS.map((step) => (
           <button
             key={step.id}
             onClick={() => setActiveStep(step.id)}
-            className={`text-sm font-medium py-2 border-b-2 transition-colors ${
+            className={`text-sm font-medium py-2 border-b-2 transition-colors whitespace-nowrap shrink-0 ${
+              step.right ? 'ml-auto' : ''
+            } ${
               activeStep === step.id
                 ? 'border-slate-700 text-slate-800'
                 : 'border-transparent text-gray-500 hover:text-gray-700'
@@ -81,11 +87,24 @@ export default function App() {
             <ResultsFormat2 />
           </div>
         )}
+        {activeStep === 'guide' && (
+          <Suspense fallback={<p className="text-sm text-gray-400 text-center py-16">Chargement…</p>}>
+            <PresentationPage />
+          </Suspense>
+        )}
       </main>
 
       {/* Pied de page */}
       <footer className="bg-white border-t border-gray-200 px-6 py-3 text-xs text-gray-400 text-center">
-        Calcul HUOX · Sem Riazi · NF EN 1993-1-1 / NF EN 1993-1-4
+        Calcul HUOX · Sem Riazi · NF EN 1993-1-1 / NF EN 1993-1-4 ·{' '}
+        <a
+          href="https://www.linkedin.com/in/sem-riazi"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="underline text-slate-500 hover:text-slate-700"
+        >
+          Contact : LinkedIn
+        </a>
       </footer>
     </div>
   )
