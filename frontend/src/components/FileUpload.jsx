@@ -108,7 +108,7 @@ export default function FileUpload() {
       {/* ── Fichier ELE ─────────────────────────────────────────────────── */}
       <DropZone
         label="Fichier ELE — liste des éléments"
-        hint="Un fichier texte à deux colonnes : numéro d'élément  numéro RC (une ligne par élément)."
+        hint="Un fichier texte à deux colonnes : numéro d'élément, identifiant RC (une ligne par élément)."
         accept=".txt,.dat,.lis,.csv"
         multiple={false}
         onDrop={handleEle}
@@ -126,7 +126,7 @@ export default function FileUpload() {
               type="button"
               onClick={(e) => { e.stopPropagation(); setEleFile(null) }}
               className="text-green-600 hover:text-red-600 text-lg leading-none px-1"
-              title="Retirer ce fichier"
+              aria-label="Retirer ce fichier"
             >
               ×
             </button>
@@ -167,7 +167,7 @@ export default function FileUpload() {
                   type="button"
                   onClick={() => removeLcFile(f.name)}
                   className="text-slate-400 hover:text-red-600 text-lg leading-none px-1 shrink-0"
-                  title={`Retirer ${f.name}`}
+                  aria-label={`Retirer ${f.name}`}
                 >
                   ×
                 </button>

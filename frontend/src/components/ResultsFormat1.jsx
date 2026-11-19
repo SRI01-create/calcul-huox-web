@@ -42,7 +42,7 @@ export default function ResultsFormat1() {
           Synthèse des résultats par RC
         </h2>
         <p className="text-sm text-gray-500 mt-0.5">
-          Efforts et ratios maximaux sur l'ensemble des éléments et des cas de charge de chaque groupe RC.
+          Efforts et ratios maximaux sur l'ensemble des éléments et des cas de charge de chaque Regroupement de Calcul.
         </p>
       </div>
 
@@ -124,13 +124,13 @@ export default function ResultsFormat1() {
                     {rc.section_class === '4' && (
                       <span className="inline-block text-[10px] bg-red-100 text-red-700
                                        px-1 py-0.5 rounded mr-0.5"
-                        title="Classe 4 — vérifications partielles uniquement">
+                        >
                         Cl.4
                       </span>
                     )}
                     {rc.shear_buckling_warning && (
-                      <span className="text-amber-500"
-                        title="Voilement par cisaillement de l'âme à vérifier">
+                      <span className="text-amber-500" role="img"
+                        aria-label="Voilement par cisaillement de l'âme à vérifier">
                         ⚠
                       </span>
                     )}

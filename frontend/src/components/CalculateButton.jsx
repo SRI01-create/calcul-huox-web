@@ -84,7 +84,7 @@ export default function CalculateButton({ onSuccess }) {
               type="button"
               onClick={clearError}
               className="text-red-400 hover:text-red-700 text-lg leading-none shrink-0"
-              title="Fermer"
+              aria-label="Fermer"
             >
               ×
             </button>

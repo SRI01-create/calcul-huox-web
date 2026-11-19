@@ -35,7 +35,7 @@ export default function ResultsOverview() {
         </svg>
         <p className="text-sm font-medium text-gray-500">Aucun résultat à afficher.</p>
         <p className="text-xs mt-1.5 text-gray-400">
-          Configurez les RC, les matériaux et les fichiers Ansys, puis lancez le calcul.
+          Configurez les RC, les matériaux et importez les fichiers, puis lancez le calcul.
         </p>
       </div>
     )
@@ -63,7 +63,7 @@ export default function ResultsOverview() {
       {/* ── Bannière statistiques ────────────────────────────────────────── */}
       <div className="flex flex-wrap gap-3">
         {[
-          { label: 'Groupes RC',    value: format1.length },
+          { label: 'RC',            value: format1.length },
           { label: 'Éléments',      value: nb_elements },
           { label: 'Cas de charge', value: nb_load_cases },
           { label: 'Combinaisons',  value: nb_combinations },

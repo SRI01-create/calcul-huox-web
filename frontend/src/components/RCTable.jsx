@@ -57,7 +57,8 @@ function TypeBadge({ type, isAngle, isCircular }) {
       className={`inline-block px-1.5 py-0.5 rounded text-[11px] font-bold mr-1.5 ${
         TYPE_COLORS[type] ?? 'bg-gray-100 text-gray-600'
       }`}
-      title={title}
+      role="img"
+      aria-label={title}
     >
       {glyph}
     </span>
@@ -163,7 +164,6 @@ export default function RCTable({ rcConfigs, materials }) {
                     {flags?.is_welded && (
                       <span
                         className="ml-1.5 text-[10px] bg-amber-100 text-amber-700 px-1 py-0.5 rounded"
-                        title="Section soudée (PRS)"
                       >
                         PRS
                       </span>
@@ -171,7 +171,6 @@ export default function RCTable({ rcConfigs, materials }) {
                     {flags?.fabrication === 'F' && (
                       <span
                         className="ml-1.5 text-[10px] bg-cyan-100 text-cyan-700 px-1 py-0.5 rounded"
-                        title="Section formée à froid"
                       >
                         froid
                       </span>
@@ -194,7 +193,7 @@ export default function RCTable({ rcConfigs, materials }) {
                       type="button"
                       onClick={(e) => { e.stopPropagation(); removeRC(rc._uid) }}
                       className="text-gray-400 hover:text-red-600 text-lg leading-none"
-                      title="Supprimer ce RC"
+                      aria-label="Supprimer ce RC"
                     >
                       ×
                     </button>

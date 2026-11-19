@@ -87,7 +87,7 @@ export default function MaterialRow({ material, canRemove }) {
           type="button"
           onClick={handleRemove}
           disabled={!canRemove}
-          title={canRemove ? 'Supprimer ce matériau' : 'Au moins un matériau requis'}
+          aria-label={canRemove ? 'Supprimer ce matériau' : 'Au moins un matériau requis'}
           className="text-gray-400 hover:text-red-600 disabled:opacity-30 disabled:hover:text-gray-400 text-xl leading-none px-2"
         >
           ×

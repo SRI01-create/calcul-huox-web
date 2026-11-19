@@ -526,7 +526,6 @@ function ClassificationControl({
           className="border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-slate-400"
           value={manualClass ?? ''}
           onChange={(e) => onManualClassChange(e.target.value === '' ? null : e.target.value)}
-          title="Forcer la classe de section (aucune restriction — sous la responsabilité de l'ingénieur)"
         >
           {MANUAL_CLASS_OPTIONS.map((o) => (
             <option key={o.value || 'auto'} value={o.value}>{o.label}</option>
@@ -535,7 +534,6 @@ function ClassificationControl({
         {isForced ? (
           <span
             className="text-xs px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 font-medium whitespace-nowrap"
-            title={`Classe auto-calculée (conservative) : ${autoClass ?? '?'}`}
           >
             Forcée (auto : {autoClass ?? '?'})
           </span>
@@ -726,7 +724,6 @@ function RCNumberField({ value, onChange }) {
         value={value}
         maxLength={16}
         onChange={(e) => onChange(e.target.value.replace(/\s/g, ''))}
-        title="Identifiant court (16 caractères max), sans espace — doit correspondre exactement au fichier ELE"
       />
     </label>
   )
@@ -843,7 +840,6 @@ export default function RCRow({ rc }) {
               type="button"
               onClick={toggleCustom}
               className="text-xs px-2 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-50 shrink-0"
-              title={isCustom ? 'Revenir au catalogue' : 'Définir une section hors catalogue'}
             >
               {isCustom ? '↩ Catalogue' : '+ Section personnalisée'}
             </button>
@@ -950,7 +946,7 @@ export default function RCRow({ rc }) {
                     checked={ltbIsPredefined}
                     onChange={() => set({ ltb_config: '3' })}
                   />
-                  Configuration prédéfinie (Annexe F)
+                  Configuration prédéfinie
                 </label>
                 <label className="flex items-center gap-1.5">
                   <input

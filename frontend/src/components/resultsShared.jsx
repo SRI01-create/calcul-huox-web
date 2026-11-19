@@ -93,9 +93,9 @@ export function GroupTh({ label, cols, first = false }) {
   )
 }
 
-export function Th({ children, title, cls = '' }) {
+export function Th({ children, cls = '' }) {
   return (
-    <th title={title}
+    <th
       className={`px-2 py-1.5 whitespace-nowrap text-left text-[11px] font-semibold
                   text-slate-600 bg-slate-100 border-b border-slate-200 ${cls}`}>
       {children}
@@ -148,7 +148,7 @@ export function TypeBadge({ type, isAngle, isCircular }) {
   const { glyph, title } = shapeFlag(type, isAngle, isCircular)
   return (
     <span className={`px-1.5 py-0.5 rounded text-[11px] font-bold
-                      ${p[type] ?? 'bg-gray-100 text-gray-600'}`} title={title}>
+                      ${p[type] ?? 'bg-gray-100 text-gray-600'}`} role="img" aria-label={title}>
       {glyph}
     </span>
   )
@@ -178,19 +178,19 @@ export function SectionLabel({ item }) {
       <span className="font-medium text-slate-800">{item.designation}</span>
       {item.is_welded && (
         <span className="ml-1.5 text-[10px] bg-amber-100 text-amber-700
-                         px-1 py-0.5 rounded" title="Section soudée (PRS)">
+                         px-1 py-0.5 rounded">
           PRS
         </span>
       )}
       {item.fabrication === 'F' && (
         <span className="ml-1.5 text-[10px] bg-cyan-100 text-cyan-700
-                         px-1 py-0.5 rounded" title="Section formée à froid">
+                         px-1 py-0.5 rounded">
           froid
         </span>
       )}
       {item.is_custom && (
         <span className="ml-1.5 text-[10px] bg-pink-100 text-pink-700
-                         px-1 py-0.5 rounded" title="Section personnalisée (hors catalogue)">
+                         px-1 py-0.5 rounded">
           perso
         </span>
       )}
@@ -213,8 +213,6 @@ export function RatioLegend({ cls = '' }) {
       ].map(({ bg, text, label }) => (
         <span key={label} className={`px-2 py-0.5 rounded ${bg} ${text}`}>{label}</span>
       ))}
-      <span className="text-gray-300 mx-1">|</span>
-      <span className="text-gray-400">Survolez les en-têtes pour les tooltips EC3.</span>
     </div>
   )
 }
