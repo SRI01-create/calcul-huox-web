@@ -17,8 +17,8 @@ const STEPS = [
   { id: 'config',  label: '1 — Configuration RC & Matériaux' },
   { id: 'import',  label: '2 — Import fichiers & Calcul'     },
   { id: 'results', label: '3 — Résultats'                    },
-  // Hors étapes de calcul : non numéroté, à droite
-  { id: 'guide',   label: 'Présentation & guide', right: true },
+  // Hors étapes de calcul : non numéroté, à la suite de l'onglet 3
+  { id: 'guide',   label: 'Présentation & guide' },
 ]
 
 export default function App() {
@@ -42,8 +42,6 @@ export default function App() {
             key={step.id}
             onClick={() => setActiveStep(step.id)}
             className={`text-sm font-medium py-2 border-b-2 transition-colors whitespace-nowrap shrink-0 ${
-              step.right ? 'ml-auto' : ''
-            } ${
               activeStep === step.id
                 ? 'border-slate-700 text-slate-800'
                 : 'border-transparent text-gray-500 hover:text-gray-700'
