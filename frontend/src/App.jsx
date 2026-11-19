@@ -94,7 +94,7 @@ export default function App() {
 
       {/* Pied de page */}
       <footer className="bg-white border-t border-gray-200 px-6 py-3 text-xs text-gray-400 text-center">
-        Calcul HUOX · Sem Riazi · NF EN 1993-1-1 / NF EN 1993-1-4 ·{' '}
+        Calcul HUOX · Sem Riazi ·{' '}
         <a
           href="https://www.linkedin.com/in/sem-riazi"
           target="_blank"
