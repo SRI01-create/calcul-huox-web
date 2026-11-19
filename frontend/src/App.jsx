@@ -65,7 +65,7 @@ export default function App() {
           <div className="max-w-2xl mx-auto space-y-8">
             <div>
               <h2 className="text-lg font-semibold text-slate-800 mb-4">
-                Import des fichiers Ansys
+                Import des fichiers
               </h2>
               <FileUpload />
             </div>
