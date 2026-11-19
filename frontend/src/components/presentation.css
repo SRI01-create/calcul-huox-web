@@ -1,0 +1,74 @@
+/* Page « Présentation & guide » — mise en forme du contenu HTML de
+   src/content/presentation/*.html (converti depuis le document Word).
+   Tout est préfixé .doc-content pour ne rien affecter ailleurs dans l'appli. */
+
+.doc-content { color: #1f2937; font-size: 0.9375rem; line-height: 1.65; }
+
+/* Titres (le numéro est ajouté automatiquement dans <span class="doc-num">) */
+.doc-content h1 {
+  font-size: 1.65rem; font-weight: 700; color: #1e293b; line-height: 1.25;
+  margin: 3.25rem 0 1rem; padding-bottom: 0.45rem; border-bottom: 2px solid #cbd5e1;
+  scroll-margin-top: 1rem;
+}
+.doc-content h1:first-child { margin-top: 0; }
+.doc-content h2 {
+  font-size: 1.25rem; font-weight: 600; color: #1e293b; line-height: 1.3;
+  margin: 2.25rem 0 0.75rem; scroll-margin-top: 1rem;
+}
+.doc-content h3 {
+  font-size: 1.05rem; font-weight: 600; color: #334155; line-height: 1.35;
+  margin: 1.75rem 0 0.5rem; scroll-margin-top: 1rem;
+}
+.doc-content .doc-num {
+  color: #64748b; font-weight: 600; margin-right: 0.6em; font-variant-numeric: tabular-nums;
+}
+
+/* Texte courant — largeur de lecture limitée ; tableaux et figures pleine largeur */
+.doc-content > p, .doc-content > ul, .doc-content > ol, .doc-content > blockquote { max-width: 48rem; }
+.doc-content p  { margin: 0.6rem 0; }
+.doc-content strong { font-weight: 600; color: #0f172a; }
+.doc-content em { font-style: italic; }
+.doc-content sub, .doc-content sup { font-size: 0.75em; line-height: 0; }
+
+.doc-content ul { list-style: disc;    padding-left: 1.4rem; margin: 0.5rem 0; }
+.doc-content ol { list-style: decimal; padding-left: 1.6rem; margin: 0.5rem 0; }
+.doc-content ul ul { list-style: circle; margin: 0.2rem 0; }
+.doc-content li { margin: 0.2rem 0; }
+.doc-content li > p { margin: 0.15rem 0; }
+.doc-content li::marker { color: #64748b; }
+
+.doc-content blockquote {
+  margin: 0.5rem 0 0.5rem 1.25rem; padding-left: 0.9rem;
+  border-left: 3px solid #e2e8f0; color: #334155;
+}
+.doc-content a.xref { color: #1d4ed8; text-decoration: underline; text-underline-offset: 2px; cursor: pointer; }
+.doc-content a.xref:hover { color: #1e3a8a; }
+
+/* Tableaux : conteneur à défilement horizontal ; les grands tableaux (> 25 lignes)
+   ont une hauteur limitée et un en-tête qui reste visible. */
+.doc-content .tbl-wrap {
+  overflow-x: auto; margin: 1rem 0; background: #fff;
+  border: 1px solid #e2e8f0; border-radius: 0.5rem;
+}
+.doc-content .tbl-wrap.tall { max-height: 75vh; overflow: auto; }
+.doc-content table {
+  border-collapse: separate; border-spacing: 0; width: 100%; min-width: 36rem;
+  font-size: 0.8125rem; line-height: 1.45;
+}
+.doc-content th, .doc-content td {
+  padding: 0.4rem 0.65rem; vertical-align: top; text-align: left;
+  border-bottom: 1px solid #e5e7eb; border-right: 1px solid #e5e7eb;
+}
+.doc-content th:last-child, .doc-content td:last-child { border-right: 0; }
+.doc-content tbody tr:last-child td { border-bottom: 0; }
+.doc-content th {
+  background: #e2e8f0; color: #1e293b; font-weight: 600;
+  position: sticky; top: 0; z-index: 1;
+}
+.doc-content td ul, .doc-content td ol { margin: 0.2rem 0; }
+.doc-content td p { margin: 0.2rem 0; }
+
+/* Figures (images seules dans un paragraphe : alignées côte à côte) */
+.doc-content img { max-width: 100%; height: auto; background: #fff; border: 1px solid #e5e7eb; border-radius: 0.25rem; }
+.doc-content p.figs { display: flex; flex-wrap: wrap; gap: 1rem; align-items: flex-start; margin: 1rem 0; max-width: none; }
+.doc-content p.figs img { flex: 0 1 auto; }
