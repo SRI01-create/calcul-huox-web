@@ -1,0 +1,1157 @@
+<h1 id="pg-caracterisation-des-donnees-et-des-calculs">Caractérisation des données et des calculs</h1>
+
+<h2 id="pg-donnees-dentree-compilees-de-longlet-1-configuration-rc-mate">Données d’entrée compilées de l’onglet « 1 — Configuration RC &amp; Matériaux »</h2>
+
+<h3 id="pg-tableaux-materiaux">Tableaux matériaux</h3>
+
+<table>
+
+<thead>
+<tr>
+<th>Données</th>
+<th>Unité</th>
+<th>Définition</th>
+<th>Commentaire et caractérisation</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Désignation</td>
+<td>Ø</td>
+<td>Désignation du matériau</td>
+<td>Texte libre</td>
+</tr>
+<tr>
+<td>Type d’acier</td>
+<td>Ø</td>
+<td>Type d’acier</td>
+<td>Carbone ou Inox</td>
+</tr>
+<tr>
+<td>fy</td>
+<td>MPa</td>
+<td>Limite d'élasticité</td>
+<td></td>
+</tr>
+<tr>
+<td>fu</td>
+<td>MPa</td>
+<td>Résistance à la traction</td>
+<td></td>
+</tr>
+<tr>
+<td>E</td>
+<td>MPa</td>
+<td>Module de Young du matériau</td>
+<td></td>
+</tr>
+<tr>
+<td>G</td>
+<td>MPa</td>
+<td>Module de cisaillement du matériau</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+
+<h3 id="pg-tableaux-des-regroupements-de-calcul">Tableaux des Regroupements de calcul</h3>
+
+<table>
+
+<thead>
+<tr>
+<th>Données</th>
+<th>Unité</th>
+<th>Définition</th>
+<th>Commentaire et caractérisation</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Identifiant RC</td>
+<td>Ø</td>
+<td>Identifiant de Regroupement de Calcul</td>
+<td><p>≤ 16 caractères, sans espace ni tabulation</p>
+<p>Doit être identique (texte strict) à la 2ᵉ colonne du fichier ELE ; numérotation auto modifiable</p></td>
+</tr>
+<tr>
+<td>Type de section</td>
+<td>Ø</td>
+<td>Type de section</td>
+<td><ul>
+<li><p>H ou U ou O ou X :</p></li>
+<li><p>H : section ouverte bi-symétrique / en I / en H</p></li>
+<li><p>U : section ouverte mono-symétrique /en U / cornières</p></li>
+<li><p>O : section fermée creuse / profil creux / tubes (ronds ou rectangles)</p></li>
+<li><p>X : section pleine (rondes ou rectangles)</p></li>
+</ul></td>
+</tr>
+<tr>
+<td>Désignation</td>
+<td>Ø</td>
+<td>Désignation de la section transversale</td>
+<td>Désignation de section (catalogue) ou étiquette si section personnalisée</td>
+</tr>
+<tr>
+<td>Fabrication</td>
+<td>Ø</td>
+<td>Mode de fabrication</td>
+<td>Laminé ou Soudé (PRS) ou à froid</td>
+</tr>
+<tr>
+<td>h</td>
+<td>mm</td>
+<td>Hauteur de la section, ou diamètre extérieur pour les sections circulaires</td>
+<td><p>Section du catalogue :</p>
+<ul>
+<li><p>H / U / L : Catalogue ArcelorMittal 2026</p></li>
+<li><p>O / □ : Catalogue ArcelorMittal 2020</p></li>
+<li><p>● / ■ : Donnée d’Entrée</p></li>
+</ul></td>
+</tr>
+<tr>
+<td>b</td>
+<td>mm</td>
+<td>Largeur de la section</td>
+<td><p>Section du catalogue :</p>
+<ul>
+<li><p>H / U / L : Catalogue ArcelorMittal 2026</p></li>
+<li><p>O / □ : Catalogue ArcelorMittal 2020</p></li>
+<li><p>● / ■ : Donnée d’Entrée</p></li>
+</ul></td>
+</tr>
+<tr>
+<td>tw</td>
+<td>mm</td>
+<td>Épaisseur d'âme</td>
+<td><p>Section du catalogue :</p>
+<ul>
+<li><p>H / U / L : Catalogue ArcelorMittal 2026</p></li>
+</ul></td>
+</tr>
+<tr>
+<td>t</td>
+<td>mm</td>
+<td>Épaisseur pour section fermée creuse</td>
+<td><p>Section du catalogue :</p>
+<ul>
+<li><p>O / □ : Catalogue ArcelorMittal 2020</p></li>
+</ul></td>
+</tr>
+<tr>
+<td>tf</td>
+<td>mm</td>
+<td>Épaisseur de semelle</td>
+<td><p>Section du catalogue :</p>
+<ul>
+<li><p>H / U / L : Catalogue ArcelorMittal 2026</p></li>
+</ul></td>
+</tr>
+<tr>
+<td>r</td>
+<td>mm</td>
+<td>Rayon de congé</td>
+<td><p>Section du catalogue :</p>
+<ul>
+<li><p>H / U / L : Catalogue ArcelorMittal 2026</p></li>
+</ul></td>
+</tr>
+<tr>
+<td>d</td>
+<td>mm</td>
+<td>Hauteur de la partie droite d’âme</td>
+<td><p>Section du catalogue :</p>
+<ul>
+<li><p>H / U / L : Catalogue ArcelorMittal 2026</p></li>
+</ul>
+<p>Suggestion en section personnalisée :</p>
+<ul>
+<li><p>H / U : d = h - 2*tf - 2*r</p></li>
+</ul></td>
+</tr>
+<tr>
+<td>A</td>
+<td>cm<sup>2</sup></td>
+<td>Aire de la section transversale</td>
+<td><p>Section du catalogue :</p>
+<ul>
+<li><p>H / U / L : Catalogue ArcelorMittal 2026</p></li>
+<li><p>O / □ : Catalogue ArcelorMittal 2020</p></li>
+<li><p>● : A = π*(h/2)²</p></li>
+<li><p>■ : A = h*b</p></li>
+</ul>
+<p>Suggestion en section personnalisée :</p>
+<ul>
+<li><p>● : A = π*(h/2)²</p></li>
+<li><p>■ : A = h*b</p></li>
+</ul></td>
+</tr>
+<tr>
+<td>Iy</td>
+<td>cm<sup>4</sup></td>
+<td>Inertie de flexion suivant l'axe y-y</td>
+<td><p>Section du catalogue :</p>
+<ul>
+<li><p>H / U / L : Catalogue ArcelorMittal 2026</p></li>
+<li><p>O / □ : Catalogue ArcelorMittal 2020</p></li>
+<li><p>● : Iy = π*(h<sup>4</sup>)/64</p></li>
+<li><p>■ : Iy = (b*h<sup>3</sup>)/12</p></li>
+</ul>
+<p>Suggestion en section personnalisée :</p>
+<ul>
+<li><p>● : Iy = π*(h<sup>4</sup>)/64</p></li>
+<li><p>■ : Iy = (b*h<sup>3</sup>)/12</p></li>
+</ul></td>
+</tr>
+<tr>
+<td>Wel,y</td>
+<td>cm<sup>3</sup></td>
+<td>Module élastique de flexion suivant l'axe y-y</td>
+<td><p>Section du catalogue :</p>
+<ul>
+<li><p>H / L : Catalogue ArcelorMittal 2026</p></li>
+<li><p>L : Catalogue ArcelorMittal 2026 (Iu/v)</p></li>
+<li><p>O / □ : Catalogue ArcelorMittal 2020</p></li>
+<li><p>● : Wel,y = (π*(h<sup>4</sup>)/64)/(h/2)</p></li>
+<li><p>■ : Wel,y = ((b*h<sup>3</sup>)/12)/(h/2)</p></li>
+</ul>
+<p>Suggestion en section personnalisée :</p>
+<ul>
+<li><p>● : Wel,y = (π*(h<sup>4</sup>)/64)/(h/2)</p></li>
+<li><p>■ : Wel,y = ((b*h<sup>3</sup>)/12)/(h/2)</p></li>
+</ul></td>
+</tr>
+<tr>
+<td>Wpl,y</td>
+<td>cm<sup>3</sup></td>
+<td>Module plastique de flexion suivant l'axe y-y</td>
+<td><p>Section du catalogue :</p>
+<ul>
+<li><p>H / U : Catalogue ArcelorMittal 2026</p></li>
+<li><p>O / □ : Catalogue ArcelorMittal 2020</p></li>
+<li><p>● / ■ : Propsection</p></li>
+</ul></td>
+</tr>
+<tr>
+<td>Iz</td>
+<td>cm<sup>4</sup></td>
+<td>Inertie de flexion suivant l'axe z-z</td>
+<td><p>Section du catalogue :</p>
+<ul>
+<li><p>H / U / L : Catalogue ArcelorMittal 2026</p></li>
+<li><p>O / □ : Catalogue ArcelorMittal 2020</p></li>
+<li><p>● : Iz = π*(h<sup>4</sup>)/64</p></li>
+<li><p>■ : Iz = (b<sup>3</sup>*h)/12</p></li>
+</ul>
+<p>Suggestion en section personnalisée :</p>
+<ul>
+<li><p>● : Iz = π*(h<sup>4</sup>)/64</p></li>
+<li><p>■ : Iz = (b<sup>3</sup>*h)/12</p></li>
+</ul></td>
+</tr>
+<tr>
+<td>Wel,z</td>
+<td>cm<sup>3</sup></td>
+<td>Module élastique de flexion suivant l'axe z-z</td>
+<td><p>Section du catalogue :</p>
+<ul>
+<li><p>H / U : Catalogue ArcelorMittal 2026</p></li>
+<li><p>L : Catalogue ArcelorMittal 2026 (Iv/u1)</p></li>
+<li><p>O / □ : Catalogue ArcelorMittal 2020</p></li>
+<li><p>● : Wel,z = (π*(h<sup>4</sup>)/64)/(h/2)</p></li>
+<li><p>■ : Wel,z = ((b<sup>3</sup>*h)/12)/(b/2)</p></li>
+</ul>
+<p>Suggestion en section personnalisée :</p>
+<ul>
+<li><p>● : Wel,z = (π*(h<sup>4</sup>)/64)/(h/2)</p></li>
+<li><p>■ : Wel,z = ((b<sup>3</sup>*h)/12)/(b/2)</p></li>
+</ul></td>
+</tr>
+<tr>
+<td>Wpl,z</td>
+<td>cm<sup>3</sup></td>
+<td>Module plastique de flexion suivant l'axe z-z</td>
+<td><p>Section du catalogue :</p>
+<ul>
+<li><p>H / U : Catalogue ArcelorMittal 2026</p></li>
+<li><p>O / □ : Catalogue ArcelorMittal 2020</p></li>
+<li><p>● / ■ : Propsection</p></li>
+</ul></td>
+</tr>
+<tr>
+<td>It</td>
+<td>cm<sup>4</sup></td>
+<td>Inertie de torsion de la section transversale</td>
+<td><p>Section du catalogue :</p>
+<ul>
+<li><p>H / U : Catalogue ArcelorMittal 2026</p></li>
+<li><p>L : Propsection</p></li>
+<li><p>O / □ : Catalogue ArcelorMittal 2020</p></li>
+<li><p>● / ■ : Propsection</p></li>
+</ul></td>
+</tr>
+<tr>
+<td>IW</td>
+<td>cm<sup>6</sup></td>
+<td>Inertie de gauchissement de la section transversale</td>
+<td><p>Section du catalogue :</p>
+<ul>
+<li><p>H / U : Catalogue ArcelorMittal 2026</p></li>
+<li><p>L : Propsection</p></li>
+</ul></td>
+</tr>
+<tr>
+<td>Sw</td>
+<td>cm<sup>4</sup></td>
+<td>Moment statique sectoriel</td>
+<td><p>Section du catalogue et Suggestion en section personnalisée :</p>
+<ul>
+<li><p>H : Sw = (b<sup>2</sup>)*((h - 2*tf) + tf)*(tf/16) ; calculé suivant SN007b-FR-EU </p></li>
+</ul></td>
+</tr>
+<tr>
+<td>Sw,w</td>
+<td>cm<sup>4</sup></td>
+<td>Moment statique sectoriel d'âme pour les sections ouvertes mono-symétrique hors cornières</td>
+<td><p>Section du catalogue et suggestion en section personnalisée :</p>
+<ul>
+<li><p>U : Sw,w = 0.25*((1 - ys/b)<sup>2</sup>)*(b<sup>2</sup>)*h*tf</p></li>
+</ul>
+<p>Calculé suivant CAL-ELE 1 2000 Annexe 2, chapitre Profil en U, soit Sw3.</p>
+<p>Pour les sections en U, le moment statique sectoriel d’âme majore la torsion vis-à-vis des moments statiques d’ailes et d’extrémités0</p></td>
+</tr>
+<tr>
+<td>Sw,max</td>
+<td>cm<sup>4</sup></td>
+<td>Moment statique sectoriel d'âme pour les cornières</td>
+<td><p>Section du catalogue et Suggestion en section personnalisée :</p>
+<ul>
+<li><p>L : Sw,max = (h²*tw/4)*(h + tw)</p></li>
+</ul></td>
+</tr>
+<tr>
+<td>ys</td>
+<td>mm</td>
+<td>Position du centre de torsion par rapport au bord d'âme</td>
+<td><p>U hors cornières ; jamais lu par le calcul (sert à la suggestion de Sw,w)</p>
+<p>Section du catalogue :</p>
+<ul>
+<li><p>U : Catalogue ArcelorMittal 2026</p></li>
+</ul></td>
+</tr>
+<tr>
+<td>Av,y</td>
+<td>cm<sup>2</sup></td>
+<td>Aire de cisaillement suivant l'axe y-y</td>
+<td><p>Section du catalogue :</p>
+<ul>
+<li><p>H, ailes parallèles : Av,y = 2*b*tf</p></li>
+<li><p>H, ailes inclinées : Av,y = A - ((d + 2*r)*tw) - 4*((2*r)² - π*r²)/4</p></li>
+<li><p>U : Catalogue ArcelorMittal 2026</p></li>
+<li><p>L : Av,y = (h*tw)/√2</p></li>
+<li><p>O : Av,y = 2*A/π</p></li>
+<li><p>□ : Av,y = A*b/(b + h)</p></li>
+<li><p>● : Av,y = (3/4)*(π*(h/2)<sup>2</sup>) ; calculé suivant RdM de S. Timoshenko</p></li>
+<li><p>■ : Av,y = (2/3)*(h*b) ; calculé suivant RdM de S. Timoshenko</p></li>
+</ul>
+<p>Suggestion en section personnalisée :</p>
+<ul>
+<li><p>H : Av,y = 2*b*tf</p></li>
+<li><p>U : Av,y = 2*b*tf</p></li>
+<li><p>L : Av,y = (h*tw)/√2</p></li>
+<li><p>O : Av,y = 2*A/π</p></li>
+<li><p>□ : Av,y = A*b/(b + h)</p></li>
+<li><p>● : Av,y = (3/4)*(π*(h/2)<sup>2</sup>) ; calculé suivant RdM de S. Timoshenko</p></li>
+<li><p>■ : Av,y = (2/3)*(h*b) ; calculé suivant RdM de S. Timoshenko</p></li>
+</ul></td>
+</tr>
+<tr>
+<td>Av,z</td>
+<td>cm<sup>2</sup></td>
+<td>Aire de cisaillement suivant l'axe z-z</td>
+<td><p>Section du catalogue :</p>
+<ul>
+<li><p>H / U : Catalogue ArcelorMittal 2026</p></li>
+<li><p>L : Av,z = (h*tw)/√2</p></li>
+<li><p>O : Av,z = 2*A/π</p></li>
+<li><p>□ : Av,z = A*h/(b + h)</p></li>
+<li><p>● : Av,z = (3/4)*(π*(h/2)<sup>2</sup>) ; calculé suivant RdM de S. Timoshenko</p></li>
+<li><p>■ : Av,z = (2/3)*(h*b) ; calculé suivant RdM de S. Timoshenko</p></li>
+</ul>
+<p>Suggestion en section personnalisée :</p>
+<ul>
+<li><p>H : Av,z = = h*tw</p></li>
+<li><p>U : Av,z = h*tw</p></li>
+<li><p>L : Av,z = (h*tw)/√2</p></li>
+<li><p>O : Av,z = 2*A/π</p></li>
+<li><p>□ : Av,z = A*h/(b + h)</p></li>
+<li><p>● : Av,z = (3/4)*(π*(h/2)<sup>2</sup>) ; calculé suivant RdM de S. Timoshenko</p></li>
+<li><p>■ : Av,z = (2/3)*(h*b) ; calculé suivant RdM de S. Timoshenko</p></li>
+</ul></td>
+</tr>
+<tr>
+<td>iy</td>
+<td>mm</td>
+<td>Rayon de giration de la section transversale suivant l'axe y-y</td>
+<td><p>Section du catalogue :</p>
+<ul>
+<li><p>U / L : Catalogue ArcelorMittal 2026</p></li>
+</ul>
+<p>Suggestion en section personnalisée :</p>
+<ul>
+<li><p>U / L : iy = √(Iy/A)</p></li>
+</ul></td>
+</tr>
+<tr>
+<td>iz</td>
+<td>mm</td>
+<td>Rayon de giration de la section transversale suivant l'axe z-z</td>
+<td><p>Section du catalogue :</p>
+<ul>
+<li><p>U / L : Catalogue ArcelorMittal 2026</p></li>
+</ul>
+<p>Suggestion en section personnalisée :</p>
+<ul>
+<li><p>U / L : iz = √(Iz/A)</p></li>
+</ul></td>
+</tr>
+<tr>
+<td>ym</td>
+<td>mm</td>
+<td>Distance entre le centre de torsion et le centre de gravité de la section transversale</td>
+<td><p>Section du catalogue :</p>
+<ul>
+<li><p>U : Catalogue ArcelorMittal 2026</p></li>
+<li><p>L : Propsection</p></li>
+</ul></td>
+</tr>
+<tr>
+<td>Classe de section</td>
+<td>Ø</td>
+<td>Classe de section</td>
+<td>Les hypothèses de chargements retenues sont tel qu’elles majorent la détermination de la classe de section, conformément à NF EN 1993-1-1 tableau 5.2 et NF EN 1993-1-4 tableau 5.2.</td>
+</tr>
+<tr>
+<td>L</td>
+<td>m</td>
+<td>Longueur de la barre</td>
+<td></td>
+</tr>
+<tr>
+<td>cry</td>
+<td>Ø</td>
+<td>Coefficient appliquer sur la longueur de la barre pour obtenir la longueur de flambement selon l'axe y-y, Lcr,y</td>
+<td></td>
+</tr>
+<tr>
+<td>crz</td>
+<td>Ø</td>
+<td>Coefficient appliquer sur la longueur de la barre pour obtenir la longueur de flambement selon l'axe z-z, Lcr,z</td>
+<td></td>
+</tr>
+<tr>
+<td>Courbe y-y</td>
+<td>Ø</td>
+<td>Courbe de flambement selon l'axe y-y</td>
+<td rowspan="2"><p>a0 ou a ou b ou c ou d, selon NF EN 1993-1-1 figure 6.4</p>
+<p>Aide au choix des courbes (facultatif), suivant NF EN 1993-1-1 tableau 6.2 et NF EN 1993-1-4 tableau 5.3</p></td>
+</tr>
+<tr>
+<td>Courbe z-z</td>
+<td>Ø</td>
+<td>Courbe de flambement selon l'axe z-z</td>
+</tr>
+<tr>
+<td>crT</td>
+<td>Ø</td>
+<td>Coefficient appliquer sur la longueur de la barre pour obtenir la longueur de flambement par la torsion, Lcr,T</td>
+<td></td>
+</tr>
+<tr>
+<td>Lm</td>
+<td>m</td>
+<td>Longueur de la poutre entre deux maintiens</td>
+<td></td>
+</tr>
+<tr>
+<td>zG</td>
+<td>mm</td>
+<td>Distance entre le point d’application de la charge et le centre de cisaillement</td>
+<td rowspan="2">Voir <a class="xref" data-xref="pg-a-propos-du-deversement" href="#pg-a-propos-du-deversement">§3.4</a> A propos du déversement</td>
+</tr>
+<tr>
+<td>Configuration LTB</td>
+<td>Ø</td>
+<td>Configuration des paramètres de déversement</td>
+</tr>
+<tr>
+<td>Mcr imposé</td>
+<td>N.m</td>
+<td>Moment critique de déversement élastique précalculé</td>
+<td>Par exemple via l’outil LTBeamN du CTICM</td>
+</tr>
+<tr>
+<td>PTC</td>
+<td>Ø</td>
+<td><ul>
+<li><p>P : section pleine, sans trous ;</p></li>
+<li><p>T : section avec trous + assemblage de catégorie A ou B ;</p></li>
+<li><p>C : section avec trous + assemblage de catégorie C</p></li>
+</ul></td>
+<td><p>Catégorie d’assemblage tel que décrit NF EN 1993-1-8 chapitre 3.4.2 :</p>
+<ul>
+<li><p>A ou B : résistance en pression diamétrale,</p></li>
+<li><p>C : résistance en glissement.</p></li>
+</ul></td>
+</tr>
+<tr>
+<td>A_trou</td>
+<td>m<sup>2</sup></td>
+<td>Aire totale des trous</td>
+<td>Saisie en m² (affichée en cm² dans les résultats)</td>
+</tr>
+<tr>
+<td>Af_trou</td>
+<td>m<sup>2</sup></td>
+<td>Aire des trous dans la semelle à soustraire</td>
+<td><p>Saisie en m² (affichée en cm² dans les résultats)</p>
+<p>H et U hors cornières uniquement</p></td>
+</tr>
+<tr>
+<td>kr</td>
+<td>Ø</td>
+<td>Coefficient de participation de la section trouée à la traction, pour acier inoxydable</td>
+<td><p>Déterminé suivant NF EN 1993-1-4 chapitre 5.3.1.(3)</p>
+<p>Spécifique aux sections trouées en acier inoxydable ; peut être pris égale à 0.9 en première approche ou à 0.7 de façon très conservative.</p></td>
+</tr>
+</tbody>
+</table>
+
+<h2 id="pg-donnees-dentree-chargees-depuis-longlet-2-import-fichiers-ca">Données d’entrée chargées depuis l’onglet « 2 — Import fichiers &amp; Calcul »</h2>
+
+<table>
+
+<thead>
+<tr>
+<th>Données</th>
+<th>Unité</th>
+<th>Définition</th>
+<th>Commentaire et caractérisation</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Elém</td>
+<td>Ø</td>
+<td>Numéro d’élément</td>
+<td>Entier positif, <sup>1ère</sup> colonne du fichier ELE, un élément ne peut apparaître qu'une fois</td>
+</tr>
+<tr>
+<td>CdC</td>
+<td>Ø</td>
+<td>Cas de charge</td>
+<td>Nom du fichier du fichier cas de charge sans extension, doublon de nom = erreur</td>
+</tr>
+<tr>
+<td>Fx_I ; Fx_J</td>
+<td>N</td>
+<td>Efforts axiaux aux nœuds I et J de l’élément</td>
+<td>Colonnes 2-3 des fichiers cas de charge</td>
+</tr>
+<tr>
+<td>Fy_I ; Fy_J</td>
+<td>N</td>
+<td>Efforts transverses suivant l’axe y-y de la section aux nœuds I et J de l’élément</td>
+<td>Colonnes 4-5 des fichiers cas de charge</td>
+</tr>
+<tr>
+<td>Fz_I ; Fz_J</td>
+<td>N</td>
+<td>Efforts transverses suivant l’axe z-z de la section aux nœuds I et J de l’élément</td>
+<td>Colonnes 6-7 des fichiers cas de charge</td>
+</tr>
+<tr>
+<td>Mx_I ; Mx_J</td>
+<td>N.m</td>
+<td>Moment de torsion aux nœuds I et J de l’élément</td>
+<td>Colonnes 8-9 des fichiers cas de charge</td>
+</tr>
+<tr>
+<td>My_I ; My_J</td>
+<td>N.m</td>
+<td>Moment suivant l’axe y-y de la section aux nœuds I et J de l’élément</td>
+<td>Colonnes 10-11 des fichiers cas de charge</td>
+</tr>
+<tr>
+<td>Mz_I ; Mz_J</td>
+<td>N.m</td>
+<td>Moment suivant l’axe z-z de la section aux nœuds I et J de l’élément</td>
+<td>Colonnes 12-13 des fichiers cas de charge</td>
+</tr>
+</tbody>
+</table>
+
+<h2 id="pg-resultats-presentes-dans-3-resultats">Résultats présentés dans « 3 — Résultats »</h2>
+
+<table>
+
+<thead>
+<tr>
+<th>Données</th>
+<th>Unité</th>
+<th>Définition</th>
+<th>Commentaire et caractérisation</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Anet</td>
+<td>cm<sup>2</sup></td>
+<td>Aire nette</td>
+<td></td>
+</tr>
+<tr>
+<td>Af,net</td>
+<td>cm<sup>2</sup></td>
+<td>Aire de la semelle nette</td>
+<td></td>
+</tr>
+<tr>
+<td>γM0</td>
+<td>Ø</td>
+<td>Coefficient partiel pour la résistance des sections</td>
+<td rowspan="3">Déterminé suivant NF EN 1993-1-1 chapitre 6.1.(1) et NF EN 1993-1-4 chapitre 5.1.(2)</td>
+</tr>
+<tr>
+<td>γM1</td>
+<td>Ø</td>
+<td>Coefficient partiel pour la résistance des barres aux instabilités</td>
+</tr>
+<tr>
+<td>γM2</td>
+<td>Ø</td>
+<td>Coefficient partiel pour la résistance à la rupture</td>
+</tr>
+<tr>
+<td>λ</td>
+<td>Ø</td>
+<td>Élancement de la barre</td>
+<td><p>Calculé suivant NF EN 1993-1-1 chapitre 6.3.1.2.(1), équations (6.52) et NF EN 1993-1-4 équation (5.8)</p>
+<p>L’élancement λ est pris égal au maximal des élancements pour le flambement par flexion, torsion et flexion-torsion</p></td>
+</tr>
+<tr>
+<td>λLT</td>
+<td>Ø</td>
+<td>Élancement pour le déversement</td>
+<td>Calculé suivant NF EN 1993-1-1 chapitre 6.3.2.2.(1) et NF EN 1993-1-4 équation (5.12)</td>
+</tr>
+<tr>
+<td>Nt</td>
+<td>kN</td>
+<td>Valeur de calcul de résistance à la traction</td>
+<td>Calculé suivant NF EN 1993-1-1 équations (6.6), (6.7), (6.8) et NF EN 1993-1-4 équations (5.4), (5.5)</td>
+</tr>
+<tr>
+<td>Nc</td>
+<td>kN</td>
+<td>Valeur de calcul de résistance à la compression uniforme</td>
+<td>Calculé suivant NF EN 1993-1-1 équations (6.9) et (6.10)</td>
+</tr>
+<tr>
+<td>My,c</td>
+<td>kN.m</td>
+<td>Valeur de calcul de la résistance à la flexion autour de son axe local y-y</td>
+<td rowspan="2">Calculé suivant NF EN 1993-1-1 équations (6.12), (6.13) et (6.14)</td>
+</tr>
+<tr>
+<td>Mz,c</td>
+<td>kN.m</td>
+<td>Valeur de calcul de la résistance à la flexion autour de son axe local z-z</td>
+</tr>
+<tr>
+<td>Vy,pl</td>
+<td>kN</td>
+<td>Valeur de calcul de la résistance au cisaillement de la section transversale suivant l'axe y-y</td>
+<td rowspan="2">Calculé suivant NF EN 1993-1-1 équations (6.17) et (6.18)</td>
+</tr>
+<tr>
+<td>Vz,pl</td>
+<td>kN</td>
+<td>Valeur de calcul de la résistance au cisaillement de la section transversale suivant l'axe z-z</td>
+</tr>
+<tr>
+<td>Ncr</td>
+<td>kN</td>
+<td>Effort normal critique de flambement élastique de la barre</td>
+<td><p>Calculé suivant La construction métallique avec les Eurocodes de l'APK équation (9.1.2), tel que :</p>
+<p>Ncr = min (Ncr,y ;Ncr,z ) avec Ncr,y = (π²*E*Iy)/Lcr et Ncr,z = (π²*E*Iz)/Lcr</p></td>
+</tr>
+<tr>
+<td>NcrT</td>
+<td>kN</td>
+<td>Effort normal critique de flambement élastique par la torsion</td>
+<td rowspan="2">Calculé suivant SN001a-FR-EU équations (1) et (5)</td>
+</tr>
+<tr>
+<td>NcrTF</td>
+<td>kN</td>
+<td>Effort normal critique de flambement élastique par la flexion-torsion</td>
+</tr>
+<tr>
+<td>Nby</td>
+<td>kN</td>
+<td>Valeur de calcul de la résistance au flambement par la flexion de la barre selon l'axe y-y</td>
+<td rowspan="3">Calculé suivant NF EN 1993-1-1 chapitres 6.3.1.1, 6.3.1.2, 6.3.1.3, 6.3.1.4 et NF EN 1993-1-4 chapitre 5.4.2.1</td>
+</tr>
+<tr>
+<td>Nbz</td>
+<td>kN</td>
+<td>Valeur de calcul de la résistance au flambement par la flexion de la barre selon l'axe z-z</td>
+</tr>
+<tr>
+<td>NbTF</td>
+<td>kN</td>
+<td>Valeur de calcul de la résistance au flambement par la torsion ou la flexion-torsion</td>
+</tr>
+<tr>
+<td>Mcr</td>
+<td>kN.m</td>
+<td>Moment critique de déversement élastique</td>
+<td>Voir <a class="xref" data-xref="pg-a-propos-du-deversement" href="#pg-a-propos-du-deversement">§3.4</a> A propos du déversement</td>
+</tr>
+<tr>
+<td>Mb</td>
+<td>kN.m</td>
+<td>Valeur de calcul du moment résistant au déversement</td>
+<td>Calculé suivant NF EN 1993-1-1 chapitres 6.3.2.1, 6.3.2.2, 6.3.2.3 et NF EN 1993-1-1 NA Clause 6.3.2.3.(1) et NF EN 1993-1-4 chapitre 5.4.3.1</td>
+</tr>
+<tr>
+<td>τw,Ed (*)</td>
+<td>MPa</td>
+<td>Contrainte de cisaillement due à la torsion non uniforme pour les sections ouvertes</td>
+<td rowspan="2"><ul>
+<li><p>Contraintes de cisaillement provoquées par la torsion non uniforme pour les sections de type H, déterminé suivant SN007b-FR-EU équation (11)</p></li>
+<li><p>Contraintes de cisaillement provoquées par la torsion soit non uniforme soit uniforme pour les sections de type U, déterminé suivant CAL-ELE 1-2000 chapitre 1.4.a et b</p></li>
+<li><p>Contraintes de cisaillement provoquées par la torsion uniforme pour les sections de type O, déterminé suivant SN007b-FR-EU équation (7)</p></li>
+<li><p>Contraintes de cisaillement provoquées par la torsion uniforme pour les sections de type X, déterminé suivant Résistance des Matériaux de S. Timoshenko chapitre X</p></li>
+</ul></td>
+</tr>
+<tr>
+<td>τt,Ed (*)</td>
+<td>MPa</td>
+<td>Contrainte de cisaillement due à la torsion uniforme pour les sections fermées</td>
+</tr>
+<tr>
+<td>Vy,pl,T,Rd (*)</td>
+<td>kN</td>
+<td>Vy,pl,Rd réduit pour prendre en compte les effets de la torsion</td>
+<td rowspan="2">Calculé suivant NF EN 1993-1-1 équations (6.25), (6.26), (6.27) et (6.28)</td>
+</tr>
+<tr>
+<td>Vz,pl,T,Rd (*)</td>
+<td>kN</td>
+<td>Vz,pl,Rd réduit pour prendre en compte les effets de la torsion</td>
+</tr>
+<tr>
+<td>My,V,Rd (*)</td>
+<td>kN.m</td>
+<td>My,c,Rd réduit pour prendre en compte les effets du cisaillement</td>
+<td rowspan="2">Calculé suivant NF EN 1993-1-1 chapitres 6.2.8.(3) et 6.2.8.(4)</td>
+</tr>
+<tr>
+<td>Mz,V,Rd (*)</td>
+<td>kN.m</td>
+<td>Mz,c,Rd réduit pour prendre en compte les effets du cisaillement</td>
+</tr>
+<tr>
+<td>My,N,Rd (*)</td>
+<td>kN.m</td>
+<td>My,V,Rd réduit par l'effort normal</td>
+<td rowspan="2">Calculé suivant NF EN 1993-1-1 chapitres 6.2.9.1, 6.2.9.2 et 6.2.10</td>
+</tr>
+<tr>
+<td>Mz,N,Rd (*)</td>
+<td>kN.m</td>
+<td>Mz,V,Rd réduit par l'effort normal</td>
+</tr>
+<tr>
+<td>Dispense « Voil. »</td>
+<td>oui / non</td>
+<td>Pour les âmes dépourvues de raidisseurs intermédiaires, possibilité de s'abstenir de la vérification au voilement par cisaillement</td>
+<td><p>Déterminé suivant NF EN 1993-1-1 équation (6.22), NF EN 1993-1-1 NA chapitre 5.6.(2) et NF EN 1993-1-4 chapitre 5.6.(2)</p>
+<p><strong>Point d’attention :</strong> Le voilement par cisaillement n'étant pas vérifié, pour les âmes dépourvues de raidisseurs soumises au cisaillement, il convient de s'assurer de la possibilité de s’abstenir de cette vérification.</p></td>
+</tr>
+<tr>
+<td>Dispense « Trous »</td>
+<td>oui / non</td>
+<td>Possibilité d'ignorer les trous dans la semelle tendue en flexion</td>
+<td><p>Déterminé suivant NF EN 1993-1-1 équation (6.16).</p>
+<p><strong>Point d’attention :</strong> Les trous dans la semelle tendu sont ignorés dans la vérification de la résistance à la flexion. Il convient donc de s’assurer de la possibilité de les ignorer dans ce cas de figure.</p></td>
+</tr>
+<tr>
+<td>λ0</td>
+<td>Ø</td>
+<td>Elancement limite</td>
+<td rowspan="2">Déterminé suivant NF EN 1993-1-1 chapitre 6.3.1.2.(4) et NF EN 1993-1-4 chapitre 5.4.2.1.(3), tableau 5.3</td>
+</tr>
+<tr>
+<td>Dispense « Flamb. »</td>
+<td>oui / non</td>
+<td>Possibilité de négliger les effets du flambement</td>
+</tr>
+<tr>
+<td>λLT,0</td>
+<td>Ø</td>
+<td>Élancement limite pour le déversement</td>
+<td rowspan="2">Déterminé suivant NF EN 1993-1-1 chapitre 6.3.2.2.(4) et NF EN 1993-1-1 NA Clause 6.3.2.3.(1) et NF EN 1993-1-4 chapitre 5.4.3.1.(2).</td>
+</tr>
+<tr>
+<td>Dispense « Dévers. »</td>
+<td>oui / non</td>
+<td>Possibilité de négliger les effets du déversement</td>
+</tr>
+<tr>
+<td>NtE</td>
+<td>kN</td>
+<td>Valeur de calcul de l'effort normal de traction</td>
+<td><p>max ( Fx ; 0 )</p>
+<p>avec Fx = Signe du nœud ayant le plus grand |Fx| * max ( |Fx_I| ; |Fx_J| )</p></td>
+</tr>
+<tr>
+<td>NcE</td>
+<td>kN</td>
+<td>Valeur de calcul de l'effort normal de compression</td>
+<td>max ( -Fx ; 0 )</td>
+</tr>
+<tr>
+<td>VyE</td>
+<td>kN</td>
+<td>Valeur de calcul de l'effort tranchant suivant l'axe y-y</td>
+<td>max ( |Fy_I| ; |Fy_J| )</td>
+</tr>
+<tr>
+<td>VzE</td>
+<td>kN</td>
+<td>Valeur de calcul de l'effort tranchant suivant l'axe z-z</td>
+<td>max ( |Fz_I| ; |Fz_J| )</td>
+</tr>
+<tr>
+<td>TE</td>
+<td>kN.m</td>
+<td>Valeur de calcul du moment de torsion</td>
+<td>max ( |Mx_I| ; |Mx_J| )</td>
+</tr>
+<tr>
+<td>MyE</td>
+<td>kN.m</td>
+<td>Valeur de calcul du moment fléchissant suivant l'axe y-y</td>
+<td>max ( |My_I| ; |My_J| )</td>
+</tr>
+<tr>
+<td>MzE</td>
+<td>kN.m</td>
+<td>Valeur de calcul du moment fléchissant suivant l'axe z-z</td>
+<td>max ( |Mz_I| ; |Mz_J| )</td>
+</tr>
+<tr>
+<td>N</td>
+<td>Ø</td>
+<td>Ratio de vérification de la résistance à l'effort normal traction-compression</td>
+<td>max ( NtE / Nt ; NcE / Nc )</td>
+</tr>
+<tr>
+<td>Vy</td>
+<td>Ø</td>
+<td>Ratio de vérification de la résistance au cisaillement pur suivant l'axe y-y</td>
+<td>VyE / Vy,pl</td>
+</tr>
+<tr>
+<td>Vz</td>
+<td>Ø</td>
+<td>Ratio de vérification de la résistance au cisaillement pur suivant son l'axe z-z</td>
+<td>VzE / Vz,pl</td>
+</tr>
+<tr>
+<td>T</td>
+<td>Ø</td>
+<td>Ratio de vérification de la résistance à la torsion pure</td>
+<td>τEd / (fy/√3/γM0)</td>
+</tr>
+<tr>
+<td>cy</td>
+<td>Ø</td>
+<td>Ratio de vérification de la résistance à la flexion simple suivant l'axe y-y</td>
+<td>MyE / My,c</td>
+</tr>
+<tr>
+<td>cz</td>
+<td>Ø</td>
+<td>Ratio de vérification de la résistance à la flexion simple suivant l'axe z-z</td>
+<td>MzE / Mz,c</td>
+</tr>
+<tr>
+<td>VyT</td>
+<td>Ø</td>
+<td>Ratio de vérification de la résistance au cisaillement suivant l'axe y-y, avec prise compte de la torsion</td>
+<td rowspan="2">Calculé suivant NF EN 1993-1-1 équations (6.25), (6.26), (6.27) et (6.28)</td>
+</tr>
+<tr>
+<td>VzT</td>
+<td>Ø</td>
+<td>Ratio de vérification de la résistance au cisaillement suivant l'axe z-z, avec prise compte de la torsion</td>
+</tr>
+<tr>
+<td>NVTM</td>
+<td>Ø</td>
+<td>Ratio de vérification de la résistance combinée flexion bi-axiale, cisaillement, torsion et effort normal</td>
+<td>Calculé suivant NF EN 1993-1-1 chapitres 6.2.9.1, 6.2.9.2 et 6.2.10</td>
+</tr>
+<tr>
+<td>NbF</td>
+<td>Ø</td>
+<td>Ratio de vérification de la résistance de la barre au flambement par la flexion</td>
+<td rowspan="2">Calculé suivant NF EN 1993-1-1 chapitres 6.3.1.1, 6.3.1.2, 6.3.1.3, 6.3.1.4 et NF EN 1993-1-4 chapitre 5.4.2.1</td>
+</tr>
+<tr>
+<td>NbTF</td>
+<td>Ø</td>
+<td>Ratio de vérification de la résistance de la barre au flambement par la torsion ou la flexion-torsion</td>
+</tr>
+<tr>
+<td>Mb</td>
+<td>Ø</td>
+<td>Ratio de vérification de la résistance de la poutre au déversement</td>
+<td>Calculé suivant NF EN 1993-1-1 chapitres 6.3.2.1, 6.3.2.2, 6.3.2.3 et NF EN 1993-1-1 NA Clause 6.3.2.3.(1) et NF EN 1993-1-4 chapitre 5.4.3.1</td>
+</tr>
+<tr>
+<td>MNy</td>
+<td>Ø</td>
+<td>Ratio de vérification de la résistance combinée de la flexion, du déversement et du flambement par la flexion selon l'axe y-y</td>
+<td rowspan="2">Calculé suivant NF EN 1993-1-1 chapitre 6.3.3.(4) et NF EN 1993-1-4 chapitre 5.5</td>
+</tr>
+<tr>
+<td>MNz</td>
+<td>Ø</td>
+<td>Ratio de vérification de la résistance combinée de la flexion, du déversement et du flambement par la flexion selon l'axe z-z</td>
+</tr>
+<tr>
+<td>kyy (*)</td>
+<td>Ø</td>
+<td>Facteur d'interaction kyy</td>
+<td rowspan="4"><p>Calculé suivant NF EN 1993-1-1 NA Clause 6.3.3.(5) et NF EN 1993-1-1 Annexe A</p>
+<p>Cmy, Cmz et CmLT sont pris égaux à 1 en toute sécurité.</p></td>
+</tr>
+<tr>
+<td>kyz (*)</td>
+<td>Ø</td>
+<td>Facteur d'interaction kyz</td>
+</tr>
+<tr>
+<td>kzy (*)</td>
+<td>Ø</td>
+<td>Facteur d'interaction kzy</td>
+</tr>
+<tr>
+<td>kzz (*)</td>
+<td>Ø</td>
+<td>Facteur d'interaction kzz</td>
+</tr>
+<tr>
+<td>ky (*)</td>
+<td>Ø</td>
+<td>Facteur d'interaction ky</td>
+<td rowspan="3">Calculé suivant NF EN 1993-1-4 chapitre 5.5 NOTE 1</td>
+</tr>
+<tr>
+<td>kz (*)</td>
+<td>Ø</td>
+<td>Facteur d'interaction kz</td>
+</tr>
+<tr>
+<td>kLT (*)</td>
+<td>Ø</td>
+<td>Facteur d'interaction kLT</td>
+</tr>
+<tr>
+<td>MAX</td>
+<td>Ø</td>
+<td>Ratio maximal</td>
+<td>max ( N, Vy, Vz, T,cy, cz, VyT, VzT, NVTM, NbF, NbTF, Mb, MNy, MNz)</td>
+</tr>
+</tbody>
+</table>
+
+<p>(*) : résultats intermédiaires, invisibles à l’utilisateur</p>
+
+<h2 id="pg-a-propos-du-deversement">A propos du déversement</h2>
+
+<h3 id="pg-configuration-des-parametres-de-deversement-et-calcul-de-mcr">Configuration des paramètres de déversement et calcul de Mcr</h3>
+
+<p>Le moment critique est calculé suivant EN 1993-1-1 NA Annexe MCR.</p>
+
+<p>Les coefficients nécessaires au calcul du moment critique sont déterminés en fonction des configurations des paramètres de déversement, tel que décrit dans le tableau ci-dessous :</p>
+
+<table>
+
+<thead>
+<tr>
+<th>Configurations</th>
+<th>Maintiens<br/>
+latéraux aux<br/>
+extrémités</th>
+<th>Chargement<br/>
+déstabilisant</th>
+<th>kz</th>
+<th>kw</th>
+<th>C1</th>
+<th>C2</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1/m-/D+/+</td>
+<td rowspan="3">sans</td>
+<td rowspan="2">avec</td>
+<td>1</td>
+<td>1</td>
+<td>1</td>
+<td>2.25</td>
+</tr>
+<tr>
+<td>2/m-/D+/s</td>
+<td>1</td>
+<td>1</td>
+<td>1.127</td>
+<td>1.645</td>
+</tr>
+<tr>
+<td>3/m-/d-</td>
+<td>sans</td>
+<td>1</td>
+<td>1</td>
+<td>1</td>
+<td>0</td>
+</tr>
+<tr>
+<td>4/M+/D+/+</td>
+<td rowspan="3">avec</td>
+<td rowspan="2">avec</td>
+<td>0.5</td>
+<td>0.5</td>
+<td>1</td>
+<td>2.25</td>
+</tr>
+<tr>
+<td>5/M+/D+/s</td>
+<td>0.5</td>
+<td>0.5</td>
+<td>1.127</td>
+<td>1.645</td>
+</tr>
+<tr>
+<td>6/M+/d-</td>
+<td>sans</td>
+<td>0.5</td>
+<td>0.5</td>
+<td>1</td>
+<td>0</td>
+</tr>
+<tr>
+<td>Mcr imposé</td>
+<td colspan="6">s-o</td>
+</tr>
+</tbody>
+</table>
+
+<p>Les maintiens latéraux aux extrémités permettent de bloquer les déformées latérales tel que décrit par l’illustration ci-dessous. Les coefficients kz et kw peuvent être réduit à 0.5 lorsqu’aux deux extrémités toutes ces déformées latérales sont empêchées.</p>
+
+<p class="figs"><img alt="Figure" loading="lazy" src="/presentation/image4.png" style="width:402px"/> <img alt="Figure" loading="lazy" src="/presentation/image5.png" style="width:133px"/></p>
+
+<p>Les chargements dits déstabilisants sont mis en lumière par l’illustration ci-dessous. Le coefficient C2 est directement lié à la présence ou non d’un chargement déstabilisant : sans chargement déstabilisant ce coefficient est nul.</p>
+
+<p class="figs"><img alt="Figure" loading="lazy" src="/presentation/image6.png" style="width:525px"/></p>
+
+<p>Les coefficients C1 et C2 des cas simples proposés par l’Eurocode 3 sont décrits par NF 1993-1-1 NA Annexe MCR tableaux 2 et SN003b-FR-EU chapitres 3.3. Ces cas dits simples sont illustrés ci-dessous :</p>
+
+<p class="figs"><img alt="Figure" loading="lazy" src="/presentation/image7.png" style="width:397px"/></p>
+
+<p>Au-delà des cas simples, les coefficients C1 et C2 sont décrits par NF 1993-1-1 NA Annexe MCR figures 2, 3 et SN003b-FR-EU figures 3.3, 3.4, 3.5 et 3.6. Ainsi, considérant :</p>
+
+<ul>
+<li><p>les coefficients kz et kw tous deux égaux à 1 soit à 0.5,</p></li>
+<li><p>et la présence d’un chargement déstabilisant,</p></li>
+</ul>
+
+<p>la combinaison C1 et C2 minimisant le moment critique est telle que C1 doit être le plus petit possible et C2 le plus grand. Ci-dessous un graphique exemple illustrant cette influence (avec kz = kw =1) :</p>
+
+<p class="figs"><img alt="Figure" loading="lazy" src="/presentation/image8.png" style="width:481px"/></p>
+
+<p>Ainsi, considérant les configurations [3/m-/d-] et [6/M+/d-], C1 doit en toute sécurité être égal à sa valeur minimale, soit 1.</p>
+
+<p>De plus, parmi les cas simples proposés par l’Eurocode 3, les coefficients C1 et C2 sont tels que : 1.127 ≤ C1 ≤ 2.578 et 0.454 ≤ C2 ≤1.645</p>
+
+<p>Ainsi, considérant les configurations [2/m-/D+/s] et [5/M+/D+/s], les coefficients doivent en toute sécurité être pris tels que : C1 = 1.127 et C2 = 1.645</p>
+
+<p>Enfin, quelque-soit la configuration de chargement, C1 et C2 sont tels que : 1.00 ≤ C1 ≤ 4.90 et 0.10 ≤ C2 ≤ 2.25</p>
+
+<p>Ainsi, considérant les configurations [1/m-/D+/+] et [4/M+/D+/+], les coefficients doivent en toute sécurité être pris tels que : C1 = 1.00 et C2 = 2.25</p>
+
+<h3 id="pg-developpement-et-recommandations-quant-au-deversement">Développement et recommandations quant au déversement</h3>
+
+<p>Sont sujet au déversement : les sections ouvertes bi-symétriques (en H ou I) et les sections ouvertes mono-symétriques (en U ou cornières).</p>
+
+<p>Ne sont pas sujet au déversement : les sections fermées creuses et les sections pleines.</p>
+
+<p><strong>Points d’attention :</strong></p>
+
+<p>Le calcul de l’instabilité au déversement tel que prévu par l’Eurocode n’a trait qu’aux barres à section en H ou I sur deux appuis (encastrés, rotulés ou ponctuels). Ainsi, en particulier en présence d’un chargement déstabilisant, les formules de l’Eurocode peuvent devenir inapplicables pour certaines situations. Ces situations sont parcourues ci-après.</p>
+
+<p>S’agissant d’un chargement étant de nature stabilisatrice :</p>
+
+<ul>
+<li><p>Les hypothèses caractérisées ci-avant (à savoir : Cmy = Cmz = CmLT = 1 ; et C1 = 1 soit configurations [3/m-/d-] et [6/M+/d-]) sont conservatives et permettent de se placer du côté de la sécurité ; ceci quelque-soit la section considérée (type H ou U) et les conditions limites appliquées (poutre sur deux appuis, poutre en console ou autres).</p></li>
+</ul>
+
+<p>S’agissant d’un chargement déstabilisant :</p>
+
+<ul>
+<li><p>Pour le type de section H :</p></li>
+</ul>
+
+<blockquote>
+<p>Lorsque la poutre est maintenue sur deux appuis, les formules de l’Eurocode s’appliquent et toutes les hypothèses et configurations caractérisées ci-avant permettent de se placer du côté de la sécurité en fonction de la situation.</p>
+<p>Lorsque la poutre n’est pas maintenue sur deux appuis et se trouve donc en porte-à-faux, les formules de l’Eurocode ne s’appliquent plus. Dès lors plusieurs solutions s’offrent à nous :</p>
+</blockquote>
+
+<ul>
+<li><p>Solution 1, simple et admissible en pratique, bien que son conservatisme ne puisse être établi pour toute situation :</p></li>
+</ul>
+
+<blockquote>
+<p>Considérer malgré tout les formules de l’Eurocode en multipliant par deux la longueur entre deux maintiens, Lm.</p>
+</blockquote>
+
+<ul>
+<li><p>Solution 2, simple quoique très conservative :</p></li>
+</ul>
+
+<blockquote>
+<p>Vérifier simplement que l’élancement de la barre permet de se prémunir de la vérification de cette instabilité, en comparant λLT à λLT,0 et conformément à l’Eurocode (λLT àλLT,0 fournis pour chaque RC dans les fiches par RC de l’onglet « 3 — Résultats »).</p>
+</blockquote>
+
+<ul>
+<li><p>Solution 3, la plus précise :</p></li>
+</ul>
+
+<blockquote>
+<p>Dans l’onglet « 1 — Configuration RC &amp; Matériaux », choisir [Mcr imposé] et intégrer directement le moment critique réel calculé par ailleurs, par exemple via l’outil LTBeamN du CTICM.</p>
+</blockquote>
+
+<ul>
+<li><p>Pour le type de section U :</p></li>
+</ul>
+
+<blockquote>
+<p>Les formules de l’Eurocode ne s’appliquent que pour le cas particulier d’une poutre maintenue sur deux appuis dont le diagramme de distribution des moments fléchissant est linéaire le long de la poutre.</p>
+<p>Notons tout-de-même que, citant les conclusions du CTICM : « En cas de flexion par rapport à l’axe de forte inertie, la formule du moment critique donné dans l’Annexe Nationale française à la partie 1-1 de l’Eurocode 3 est applicable. » Et « dans la majorité des cas rencontrés en pratique, des barres en section U soumises à de la flexion par rapport à l’axe de faible inertie ne sont pas sensibles à l’instabilité élastique. Par conséquent, la ruine de ces barres est, dans la majorité des cas, caractérisée par l’atteinte de la résistance de la section la plus chargée, les effets du second ordre et de l’instabilité sont alors négligeable. » (pour plus de détail cf. publication Revue Construction Métallique n°2-2016). Ainsi, bien qu’en théorie les formules de l’Eurocode ne s’appliquent plus de façon générale ; il apparait qu’en pratique ces formules restent malgré tout valables. La solution 2 ci-avant restant la plus simple quoique souvent trop conservative.</p>
+</blockquote>

@@ -1,0 +1,111 @@
+<h1 id="pg-presentation">Présentation</h1>
+
+<h2 id="pg-objet">Objet</h2>
+
+<p>L’Eurocode 3 décrit la vérification de la résistance et de la stabilité des éléments linéaires en acier (poutres, poteaux et assimilés). Des logiciels métiers spécialisés intègrent ces vérifications, mais ils restent parfois inapplicables selon l’environnement ou la situation. L’ingénieur structure se tourne alors vers un logiciel aux éléments finis généraliste.</p>
+
+<p>Ces logiciels fournissent des résultats bruts, sans post-traitement selon l’Eurocode 3. Or ce post-traitement est long et fastidieux, surtout lorsque l’on cherche à optimiser la vérification au plus juste et à éviter, autant que possible, les données enveloppes.</p>
+
+<p>Calcul HUOX automatise cette tâche : à partir des efforts internes issus de votre calcul EF, il vérifie chaque élément, pour chaque cas de charge, selon NF EN 1993-1-1 et, pour l’inox, NF EN 1993-1-4.</p>
+
+<h2 id="pg-fonctionnalites">Fonctionnalités</h2>
+
+<p><strong>Comment l’utiliser</strong></p>
+
+<ol type="1">
+<li><p><strong>Configuration.</strong> Vous renseignez les matériaux et les groupes de sections (RC) : profil du catalogue ou section personnalisée, longueurs de flambement et de déversement, trous éventuels. Vous pouvez exporter votre configuration puis la réimporter pour la réutiliser d’un projet à l’autre.</p></li>
+<li><p><strong>Import.</strong> Vous déposez le fichier ELE, qui associe chaque élément à son RC, et un fichier texte d’efforts par cas de charge.</p></li>
+<li><p><strong>Calcul et résultats.</strong> Un clic lance la vérification de l’ensemble du modèle.</p></li>
+</ol>
+
+<p><strong>Ce qui est vérifié</strong></p>
+
+<ul>
+<li><p>La classification des sections.</p></li>
+<li><p>Les résistances de section : traction, compression, flexion, cisaillement et torsion, ainsi que leurs combinaisons.</p></li>
+<li><p>Le flambement par flexion, par torsion et par flexion-torsion.</p></li>
+<li><p>Le déversement des sections H et U, avec six configurations de Mcr ou une valeur imposée.</p></li>
+<li><p>L’interaction effort normal + moments.</p></li>
+<li><p>Les cas où le flambement, le déversement, le voilement par cisaillement ou les trous peuvent être négligés.</p></li>
+</ul>
+
+<p><strong>Ce qui est pris en charge</strong></p>
+
+<ul>
+<li><p>Les sections en I et en H, en U, les cornières, les sections tubulaires et les sections pleines (rondes, carrées ou rectangulaires).</p></li>
+<li><p>Les profilés laminés, les sections soudées et, pour les sections en U, les sections formées à froid.</p></li>
+<li><p>Les sections avec ou sans trous.</p></li>
+<li><p>Les classes de section 1, 2 et 3.</p></li>
+<li><p>Les matériaux carbone et inoxydable.</p></li>
+</ul>
+
+<p>La classe 4 n’est pas prise en charge : les résistances correspondantes ne sont pas calculées (affichées « — ») et une alerte vous en informe.</p>
+
+<p><strong>Une large librairie de sections</strong></p>
+
+<p>Les catalogues rassemblent près de 1 400 profils. Si votre section n’y figure pas, vous pouvez saisir une section personnalisée.</p>
+
+<p><strong>Des aides à la saisie</strong></p>
+
+<ul>
+<li><p>La classe de section est déterminée automatiquement, et vous pouvez la forcer si besoin.</p></li>
+<li><p>Un guide vous aide à choisir les courbes de flambement, à titre indicatif.</p></li>
+</ul>
+
+<h2 id="pg-resultats">Résultats</h2>
+
+<p>Les résultats sont présentés à trois niveaux complémentaires, pour une intégration simple et détaillée dans un rapport technique :</p>
+
+<ul>
+<li><p>une <strong>fiche par RC</strong>, qui regroupe géométrie, caractéristiques, matériau, instabilités et résistances ;</p></li>
+<li><p>une <strong>synthèse par RC</strong>, avec les efforts et moments maximaux et 14 ratios d’utilisation (plus le maximum), codés par couleur ;</p></li>
+<li><p>un <strong>détail élément × cas de charge</strong>, filtrable par RC et par niveau de ratio.</p></li>
+</ul>
+
+<p>Des alertes vous signalent les situations particulières (élément absent d’un cas de charge, RC non configuré, classe 4, etc.) sans interrompre le calcul.</p>
+
+<h2 id="pg-bon-a-savoir">Bon à savoir</h2>
+
+<p>Le premier calcul après une période d’inactivité peut prendre 30 à 60 secondes, le temps que le serveur redémarre.</p>
+
+<p>Pour tenir compte de l’environnement technique, un minimum d’hypothèses simplificatrices est retenu. Elles sont toujours majorantes et sécuritaires.</p>
+
+<p><strong>Responsabilité</strong></p>
+
+<p>Calcul HUOX est mis à disposition gracieusement par son auteur, et s'adresse exclusivement à des utilisateurs avertis et professionnels. Il ne remplace pas votre jugement d’ingénieur. Il a fait l'objet d'une campagne de vérification et de cas tests approfondis, tout de même l'absence d'erreur ne peut être garantie de façon absolue. Vous restez responsable de vos données, de vos hypothèses et de l'interprétation des résultats, qu'il vous appartient de contrôler par ailleurs avant toute utilisation. L'outil ne couvre que le périmètre décrit dans ce document. Il est fourni en l’état, sans garantie. L'auteur ne saurait être tenu responsable des conséquences de son utilisation, dans les limites autorisées par la loi. Le service peut évoluer ou s'arrêter sans préavis, et vos fichiers et résultats ne sont pas conservés. Pour signaler une anomalie : voir le contact en bas de page.</p>
+
+<h2 id="pg-references">Références</h2>
+
+<p>NF EN 1993-1-1 – Octobre 2005 : Eurocode 3 – Calcul des structures en acier – Partie 1-1 : Règles générales et règles pour les bâtiments</p>
+
+<p>NF EN 1993-1-1/NA – Août 2013 : Eurocode 3 - Calcul des structures en acier – Annexe Nationale à la NF EN 1993-1-1:2005</p>
+
+<p>NF EN 1993-1-4 – Février 2007 : Eurocode 3 – Calcul des structures en aciers – Partie 1-4 : règles générales – Règles supplémentaires pour les aciers inoxydables</p>
+
+<p>NF EN 1993-1-4/NA – Mars 2008 : Eurocode 3 – Calcul des structures en acier – Partie 1-4 : Règles générales – Règles supplémentaires pour les aciers inoxydables – Annexe nationale à la NF EN 1993-1-4:2007</p>
+
+<p>CAL-ELE 1-2000 – Construction Métallique, n° 1-2000 – CTICM : Calcul des contraintes dans un élément soumis à de la torsion</p>
+
+<p>SN001a-FR-EU – CTICM : NCCI : Effort normal critique pour les modes de flambement par torsion et par flexion-torsion</p>
+
+<p>SN003b-FR-EU – CTICM : NCCI : Moment critique de déversement élastique</p>
+
+<p>SN007b-FR-EU – CTICM : NCCI Torsion</p>
+
+<p>Revue Construction Métallique n°2-2016 : Instabilité élastique de barres fléchies à sections en U</p>
+
+<p>Résistance des Matériaux de S. Timoshenko</p>
+
+<p>La construction métallique avec les Eurocodes – 2014 – APK</p>
+
+<p>Catalogue produits ArcelorMittal 2020</p>
+
+<p>Catalogue produits ArcelorMittal 2026</p>
+
+<p>Logiciel PropSection – calcul des propriétés des sections – CTICM</p>
+
+<p>Logiciel LTBeamN – Déversement élastique de poutres fléchies comprimées – CTICM</p>
+
+<p>Logiciel A3C – vérification d’une barre comprimée et fléchie – CTICM</p>
+
+<p>Logiciel TORSION – Calcul des sollicitations et des contraintes dues à la torsion dans une poutre métallique – CTICM</p>

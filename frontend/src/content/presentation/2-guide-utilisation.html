@@ -1,0 +1,483 @@
+<h1 id="pg-guide-dutilisation">Guide d’utilisation</h1>
+
+<h2 id="pg-etape-1-1-configuration-rc-materiaux">Étape 1 : « 1 — Configuration RC &amp; Matériaux »</h2>
+
+<h3 id="pg-sauvegarder-et-recharger-une-configuration">Sauvegarder et recharger une configuration</h3>
+
+<ul>
+<li><p>[Exporter la configuration] : Télécharge un fichier JSON (calcul-huox-config_date_heure.json) contenant toutes les informations saisies sur la page.</p></li>
+<li><p>[Charger une configuration] : Remplace toutes les informations saisies sur la page par celles sauvées sur fichier .json précédemment exporté.</p></li>
+</ul>
+
+<h3 id="pg-materiaux">Matériaux</h3>
+
+<p>Chaque carte correspond à un matériau.</p>
+
+<ul>
+<li><p>Complétez les Champs de chaque matériau :</p>
+<ul>
+<li><p>Désignation : texte libre</p></li>
+<li><p>Type d’acier : Carbone ou Inox</p></li>
+<li><p>fy, fu, E, G : en MPa</p></li>
+</ul></li>
+<li><p>[+ Ajouter un matériau] crée un S235 avec le numéro suivant, attribué automatiquement.</p></li>
+<li><p>[×] supprime un matériau.</p></li>
+</ul>
+
+<h3 id="pg-regroupements-de-calcul-rc">Regroupements de calcul (RC)</h3>
+
+<p>Un RC regroupe des éléments ayant la même section, le même matériau et les mêmes paramètres de stabilité.</p>
+
+<p><strong>Créer et renseigner un RC</strong></p>
+
+<ol type="1">
+<li><p>Cliquez sur [+ Ajouter un RC].</p></li>
+<li><p>Cliquez sur sa ligne pour la déplier.</p></li>
+<li><p>Remplissez les blocs dans l’ordre : <em>RC et section</em>, <em>Matériau et classe</em>, <em>Flambement</em>, <em>Déversement</em>, <em>Trous</em>. De façon générale, les champs à remplir s’affichent lorsqu’ils sont utiles et sont masqués lorsqu’ils ne sont pas pertinents.</p></li>
+<li><p>Le [×] de la ligne supprime le RC.</p></li>
+</ol>
+
+<p><strong>Les badges :</strong></p>
+
+<ul>
+<li><p>H : profilé en I ou en H</p></li>
+<li><p>U / L : profilé en U / cornière</p></li>
+<li><p>O / □ : tube circulaire / tube non circulaire</p></li>
+<li><p>● / ■ : section pleine circulaire / non circulaire</p></li>
+<li><p>PRS : section soudée</p></li>
+<li><p>froid : section formée à froid</p></li>
+<li><p>perso : section personnalisée</p></li>
+</ul>
+
+<p><strong>Bloc « RC et section »</strong></p>
+
+<ul>
+<li><p>Identifiant RC : texte de 16 caractères maximum, sans espace. Il doit correspondre caractère pour caractère à la 2ᵉ colonne de votre fichier ELE (« 03 » n’est pas « 3 »). Le site numérote les RC automatiquement, et vous pouvez les renommer.</p></li>
+<li><p>Type de section :</p>
+<ul>
+<li><p>H : section ouverte bi-symétrique / en I / en H</p></li>
+</ul>
+<ul>
+<li><p>U : section ouverte mono-symétrique /en U / cornières</p></li>
+<li><p>O : section fermée creuse / profil creux / tubes (ronds ou rectangles)</p></li>
+<li><p>X : section pleine (rondes ou rectangles)</p></li>
+</ul></li>
+<li><p>Désignation : tapez dans le champ pour rechercher dans le catalogue de section pré-enregistrées.</p>
+<ul>
+<li><p>Si type de section = H, par exemple : « IPN »</p></li>
+<li><p>Si type de section = U, par exemple : « UPE » ou « cornière »</p></li>
+<li><p>Si type de section = O, par exemple : « tube »</p></li>
+<li><p>Si type de section = X, par exemple : « pleine »</p></li>
+</ul></li>
+</ul>
+
+<p><strong>Section personnalisée (hors catalogue)</strong></p>
+
+<ul>
+<li><p>[+ Section personnalisée] ouvre le formulaire, [↩︎ Catalogue] revient au catalogue.</p></li>
+<li><p>Remplissez les champs qui s’affichent en fonction de leur utilité.</p></li>
+<li><p>Certains champs proposent une suggestion avec un lien [Appliquer]. Elle n’est jamais appliquée automatiquement, et elle repose sur des formules volontairement simplifiées.</p></li>
+</ul>
+
+<p><strong>Bloc « Matériau et classe »</strong></p>
+
+<ul>
+<li><p>Matériau : Choisissez parmi ceux définis en <a class="xref" data-xref="pg-materiaux" href="#pg-materiaux">§2.1.2</a></p></li>
+<li><p>Classe de section : Auto (calcul conservatif en compression pure) ou forcée</p></li>
+</ul>
+
+<p><strong>Bloc « Flambement par flexion »</strong></p>
+
+<ul>
+<li><p>Définissez la longueur de la barre L (m), et les coefficients de flambement par flexion autour de y-y et de z-z, respectivement cry et crz.</p></li>
+<li><p>Courbes de flambement y-y et z-z : une aide au choix des courbes est proposée : renseignez les critères, lisez la suggestion, puis cliquez sur [Appliquer] pour la reporter.</p></li>
+</ul>
+
+<p><strong>Bloc « Flambement par torsion »</strong></p>
+
+<ul>
+<li><p>Définissez le coefficients de flambement par torsion crT, uniquement pour les U.</p></li>
+</ul>
+
+<p><strong>Bloc « Déversement</strong> »</p>
+
+<ul>
+<li><p>Définissez la longueur entre maintiens latéraux Lm (m), et la distance entre le point d’application de la charge et le centre de cisaillement zG (mm).</p></li>
+<li><p>Configuration Mcr : Choisissez l’une des 6 configurations prédéfinies des paramètres de déversement ou saisissez directement le moment critique, en N·m.</p></li>
+</ul>
+
+<p><strong>Bloc « Réduction de section (trous) »</strong></p>
+
+<ul>
+<li><p>Sélectionnez P (section pleine), T (trous de catégorie A/B) ou C (trous de catégorie C)</p></li>
+<li><p>Remplissez les champs : aire totale des trous A_trou (m²), aire des trous dans la semelle tendue Af_trou (m²) et kr le coefficient de participation de la section trouée à la traction (seulement pour acier inoxydable).</p></li>
+</ul>
+
+<h3 id="pg-points-dattention">Points d’attention</h3>
+
+<p><strong>Les repères internes des sections</strong></p>
+
+<p>Le repère interne des sections sujets au déversement doit être défini tel qu’explicité ci-après :</p>
+
+<p>Pour les sections section ouverte bi ou mono-symétrique à âme, soit celles de type H et U hormis les cornières, le repère doit être défini tel que l’axe z-z soit parallèle à l’âme de la section. En particulier pour les sections de type U, le repère interne doit être placé au niveau du centre de gravité G (cf. figures ci-dessous).</p>
+
+<p>Seules les cornières égales sont traitées. Ainsi, elles sont traitées comme n’importe quelles autres sections ouvertes mono-symétrique (de type U). Cependant, leur repère doit être défini de telle sorte qu’il décrit un angle de 45° avec les ailes (cf. figures ci-dessous). On notera que les modules plastiques ne sont pas utiles à la validation des cornières.</p>
+
+<p class="figs"><img alt="Figure" loading="lazy" src="/presentation/image1.jpeg" style="width:243px"/> <img alt="Figure" loading="lazy" src="/presentation/image2.jpeg" style="width:242px"/> <img alt="Figure" loading="lazy" src="/presentation/image3.jpeg" style="width:243px"/></p>
+
+<p><strong>Les configurations des paramètres de déversement</strong></p>
+
+<p>Dans une optique simplificatrice, la vérification des instabilités de déversement sont résumés en seulement 6+1 configurations :</p>
+
+<table>
+
+<thead>
+<tr>
+<th>Configurations</th>
+<th>Maintiens<br/>
+latéraux aux<br/>
+extrémités</th>
+<th>Chargement<br/>
+déstabilisant</th>
+<th>Valeurs des coefficients nécessaires<br/>
+au calcul du moment critique<br/>
+enveloppes …</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1/m-/D+/+</td>
+<td rowspan="3">sans</td>
+<td rowspan="2">avec</td>
+<td>… de façon globale.</td>
+</tr>
+<tr>
+<td>2/m-/D+/s</td>
+<td>… aux cas simples de l’Eurocode 3.</td>
+</tr>
+<tr>
+<td>3/m-/d-</td>
+<td>sans</td>
+<td>… de façon globale.</td>
+</tr>
+<tr>
+<td>4/M+/D+/+</td>
+<td rowspan="3">avec</td>
+<td rowspan="2">avec</td>
+<td>… de façon globale.</td>
+</tr>
+<tr>
+<td>5/M+/D+/s</td>
+<td>… aux cas simples de l’Eurocode 3.</td>
+</tr>
+<tr>
+<td>6/M+/d-</td>
+<td>sans</td>
+<td>… de façon globale.</td>
+</tr>
+<tr>
+<td>Mcr imposé</td>
+<td colspan="3">s-o</td>
+</tr>
+</tbody>
+</table>
+
+<h2 id="pg-etape-2-2-import-fichiers-calcul">Étape 2 : « 2 — Import fichiers &amp; Calcul »</h2>
+
+<h3 id="pg-formats-des-fichiers-a-importer">Formats des fichiers à importer</h3>
+
+<p><strong>Fichier liste des éléments</strong></p>
+
+<p>Il associe chaque élément à son RC.</p>
+
+<ul>
+<li><p>Extension : .txt, .dat, .lis ou .csv</p></li>
+<li><p>1<sup>ère</sup> colonne : numéro d’élément (entier positif)</p></li>
+<li><p>2<sup>ème</sup> colonne : identifiant RC qui doit exactement correspondre à l’identifiant RC saisie à l’onglet « 1 — Configuration RC &amp; Matériaux »</p></li>
+<li><p>Les colonnes suivantes sont ignorées, de même que les lignes d’en-tête ou de commentaire.</p></li>
+</ul>
+
+<p>Un numéro d’élément en double dans ce fichier provoque une erreur.</p>
+
+<p><strong>Fichiers de cas de charge</strong></p>
+
+<p>Ils associent à chaque élément leurs torseurs d’efforts et moments internes aux nœuds I et J, chaque fichier étant représentatif d’un cas de charge. Le nom du cas est le nom du fichier sans extension (« LC80.txt » donne le cas « LC80 »).</p>
+
+<ul>
+<li><p>Extension : .txt, .dat, .lis ou .rst</p></li>
+<li><p>Chaque ligne de données comporte au moins 13 colonnes, dans cet ordre :</p></li>
+</ul>
+
+<table>
+
+<thead>
+<tr>
+<th>Colonnes</th>
+<th>1</th>
+<th>2-3</th>
+<th>4-5</th>
+<th>6-7</th>
+<th>8-9</th>
+<th>10-11</th>
+<th>12-13</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Contenu</td>
+<td>N° d’élément</td>
+<td>Fx (nœuds I, J)</td>
+<td>Fy (I, J)</td>
+<td>Fz (I, J)</td>
+<td>Mx (I, J)</td>
+<td>My (I, J)</td>
+<td>Mz (I, J)</td>
+</tr>
+<tr>
+<td>Unité</td>
+<td>-</td>
+<td>N</td>
+<td>N</td>
+<td>N</td>
+<td>N·m</td>
+<td>N·m</td>
+<td>N·m</td>
+</tr>
+</tbody>
+</table>
+
+<ul>
+<li><p>Convention de signe : Fx &gt; 0 en traction, Fx &lt; 0 en compression. Les torseurs doivent être exprimés dans le même repère que celui de leur section.</p></li>
+<li><p>Un élément présent deux fois dans un même fichier provoque une erreur.</p></li>
+</ul>
+
+<h3 id="pg-procedure">Procédure</h3>
+
+<ol type="1">
+<li><p>Déposez le fichier ELE (glisser-déposer ou « parcourir »).</p></li>
+<li><p>Déposez un ou plusieurs fichiers de cas de charge, en une ou plusieurs fois. Un fichier de même nom n’est pas ajouté deux fois, et le [×] de chaque ligne le retire.</p></li>
+<li><p>Corrigez les points listés dans la zone orange, s’il y en a : le bouton reste grisé tant qu’elle est affichée.</p></li>
+<li><p>Cliquez sur [Lancer le calcul EC3]. Vous arrivez ensuite sur les résultats.</p></li>
+</ol>
+
+<p>Le premier calcul après une période d’inactivité peut prendre 30 à 60 secondes, le temps que le serveur redémarre.</p>
+
+<h2 id="pg-etape-3-3-resultats">Étape 3 : « 3 — Résultats »</h2>
+
+<p>Une fois le calcul lancé et terminé avec succès, l'onglet « 3 — Résultats » s'affiche automatiquement. Il permet de consulter et d'analyser les résultats à différents niveaux de détail. La structure de cette page est telle qu’on retrouve :</p>
+
+<ol type="1">
+<li><p>L’en-tête de la page avec une bannière et un encadré avertissements</p></li>
+<li><p>Les fiches par RC dépliables qui détaillent pour chaque regroupement de calcul : les données d’entrée, les paramètres de calcul et les résultats intermédiaires utiles à l’analyse.</p></li>
+<li><p>La synthèse des résultats par RC qui présente les efforts et moments maximaux et les ratios maximaux sur l’ensemble des éléments de chaque regroupement de calcul et pour tous les cas de charge. Les résultats des dispenses ci-dessous y sont aussi présentés :</p>
+<ul>
+<li><p>Voil. : possibilité de ne pas vérifier le voilement par cisaillement</p></li>
+<li><p>Trous : possibilité d’ignorer les trous dans la semelle tendue</p></li>
+</ul></li>
+<li><p>Le détail par élément x cas de charge qui présente en détail les efforts et moments et les ratios de chaque élément et pour chaque cas de charge. Les résultats des dispenses ci-dessous y sont aussi présentés :</p>
+<ul>
+<li><p>Flamb. : possibilité de négliger les effets du flambement</p></li>
+<li><p>Dévers. : possibilité de négliger les effets du déversement</p></li>
+</ul></li>
+</ol>
+
+<h2 id="pg-alertes-erreurs-et-avertissements">Alertes, erreurs et avertissements</h2>
+
+<h3 id="pg-onglet-2-import-fichiers-calcul">Onglet « 2 — Import fichiers &amp; Calcul »</h3>
+
+<p>Il existe deux niveaux d'alertes dans cet onglet : les alertes <strong>orange</strong>, affichées avant le calcul, qui grisent le bouton, et les erreurs <strong>rouges</strong>, qui apparaissent après un clic et font échouer le calcul.</p>
+
+<p><strong>Alertes orange (le bouton « Lancer le calcul EC3 » reste grisé)</strong></p>
+
+<table>
+
+<thead>
+<tr>
+<th>Message affiché</th>
+<th>Cause</th>
+<th>Correction</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Au moins un matériau doit être défini.</td>
+<td>Liste des matériaux vide</td>
+<td>Ajouter un matériau (onglet 1)</td>
+</tr>
+<tr>
+<td>Numéros de matériau en double : …</td>
+<td>Deux matériaux ont le même numéro</td>
+<td>Rendre les numéros uniques</td>
+</tr>
+<tr>
+<td>Au moins une configuration RC doit être définie.</td>
+<td>Aucun RC</td>
+<td>Ajouter un RC</td>
+</tr>
+<tr>
+<td>Numéros de RC en double : …</td>
+<td>Deux RC ont le même identifiant</td>
+<td>Rendre les identifiants uniques</td>
+</tr>
+<tr>
+<td>RC : l'identifiant ne peut pas être vide.</td>
+<td>Identifiant RC vide</td>
+<td>Renseigner l'identifiant</td>
+</tr>
+<tr>
+<td>RC « … » : l'identifiant ne peut pas contenir d'espace ni de tabulation…</td>
+<td>Espace ou tabulation dans l'identifiant</td>
+<td>Utiliser « - » ou « _ »</td>
+</tr>
+<tr>
+<td>RC « … » : l'identifiant dépasse 16 caractères.</td>
+<td>Identifiant trop long</td>
+<td>Le raccourcir</td>
+</tr>
+<tr>
+<td>RC n : aucune désignation de section sélectionnée.</td>
+<td>Section non choisie</td>
+<td>Choisir une section (ou la saisir en personnalisé)</td>
+</tr>
+<tr>
+<td>RC n : matériau n°X introuvable.</td>
+<td>Le RC référence un matériau qui n'existe pas</td>
+<td>Choisir un matériau existant</td>
+</tr>
+<tr>
+<td>RC n : « Aire des trous » (A_trou) requise et non nulle pour PTC = T (ou C).</td>
+<td>Trous déclarés sans aire</td>
+<td>Saisir A_trou (m²) &gt; 0, ou repasser PTC à P</td>
+</tr>
+<tr>
+<td>Fichier ELE (liste des éléments) manquant.</td>
+<td>Aucun fichier ELE déposé</td>
+<td>Déposer le fichier ELE</td>
+</tr>
+<tr>
+<td>Aucun fichier de cas de charge fourni.</td>
+<td>Aucun fichier de cas de charge déposé</td>
+<td>Déposer au moins un fichier</td>
+</tr>
+</tbody>
+</table>
+
+<p><strong>Erreurs rouges (affichées après le clic sur « Lancer le calcul »)</strong></p>
+
+<table>
+
+<thead>
+<tr>
+<th>Erreur</th>
+<th>Cause</th>
+<th>Correction</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Fichier ELE : aucune donnée valide trouvée</td>
+<td>Aucune ligne avec un n° d'élément entier positif suivi d'un identifiant RC</td>
+<td>Vérifier le format de l'ELE</td>
+</tr>
+<tr>
+<td>Fichier ELE : numéros d'éléments en double</td>
+<td>Un élément apparaît plusieurs fois</td>
+<td>Supprimer les doublons</td>
+</tr>
+<tr>
+<td>Fichier nom : … (aucune donnée valide)</td>
+<td>Aucune ligne de 13 colonnes ou plus avec un n° d'élément valide</td>
+<td>Vérifier l'export du cas de charge</td>
+</tr>
+<tr>
+<td>Fichier nom : … (élément en double)</td>
+<td>Un élément apparaît plusieurs fois dans le même fichier</td>
+<td>Supprimer les doublons</td>
+</tr>
+<tr>
+<td>Cas de charge « … » fourni plusieurs fois</td>
+<td>Deux fichiers ont le même nom une fois l'extension retirée (ex. LC1.txt et LC1.dat)</td>
+<td>Renommer l'un des fichiers</td>
+</tr>
+<tr>
+<td>Erreur de catalogue : …</td>
+<td>Désignation de section introuvable au catalogue</td>
+<td>Choisir une désignation de la liste proposée</td>
+</tr>
+<tr>
+<td>Section personnalisée X : champ(s) manquant(s) — …</td>
+<td>Champ obligatoire non renseigné</td>
+<td>Compléter les champs listés (voir <a class="xref" data-xref="pg-regroupements-de-calcul-rc" href="#pg-regroupements-de-calcul-rc">§2.1.3</a> du guide)</td>
+</tr>
+<tr>
+<td>Paramètres de calcul invalides : …</td>
+<td>Valeur de configuration incorrecte</td>
+<td>Corriger la valeur indiquée</td>
+</tr>
+<tr>
+<td>Erreur de calcul / erreur interne inattendue : …</td>
+<td>Cas non prévu</td>
+<td>Relever le message exact pour analyse</td>
+</tr>
+</tbody>
+</table>
+
+<h3 id="pg-avertissements-de-longlet-3-resultats">Avertissements de l‘onglet « 3 — Résultats »</h3>
+
+<p>Ces avertissements sont affichés à l’onglet « 3 — Résultats », une fois le calcul terminé. Les situations décrites par les 5 premiers avertissements ci-dessous peuvent découler d’un choix de l’utilisateur. Les 2 derniers décrivent des situations identifiées comme hors du scope d’analyse de l’outil.</p>
+
+<table>
+
+<thead>
+<tr>
+<th>Message (résumé)</th>
+<th>Déclenché quand</th>
+<th>Effet sur le calcul</th>
+<th>Action conseillée</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>« N élément(s) présent(s) dans les fichiers de cas de charge mais absent(s) du fichier ELE… »</td>
+<td>Des éléments figurent dans un cas de charge mais pas dans l'ELE</td>
+<td>Éléments écartés</td>
+<td>Normal pour les éléments d'aide à la modélisation EF (rigides, connecteurs…). Sinon, compléter l'ELE</td>
+</tr>
+<tr>
+<td>« Numéro(s) RC présent(s) dans le fichier ELE mais sans configuration correspondante… »</td>
+<td>L'ELE référence un identifiant RC non configuré</td>
+<td>Éléments de ce RC écartés</td>
+<td>Créer le RC dans l'onglet 1, ou ignorer si c'est voulu</td>
+</tr>
+<tr>
+<td>« N élément(s) déclaré(s) dans le fichier ELE avec un RC configuré, mais absent(s) de tous les fichiers de cas de charge… »</td>
+<td>Un élément d'un RC configuré n'apparaît dans aucun cas de charge</td>
+<td>Aucune vérification pour cet élément</td>
+<td>Vérifier l'export des cas de charge ou la numérotation</td>
+</tr>
+<tr>
+<td>« N élément(s) avec RC configuré présent(s) dans certains fichiers de cas de charge seulement… »</td>
+<td>Au moins 2 cas de charge importés, et un élément absent de l'un d'eux</td>
+<td>Élément vérifié uniquement sur ses cas de charge, enveloppe possiblement incomplète</td>
+<td>Vérifier si c'est voulu (cas de charge scindés par zone)</td>
+</tr>
+<tr>
+<td>« RC n (désignation) : classe de section forcée manuellement à X (classe auto-calculée : Y)… »</td>
+<td>Classe forcée différente de la classe automatique</td>
+<td>La classe forcée est utilisée</td>
+<td>Vérifier la pertinence du choix</td>
+</tr>
+<tr>
+<td>« RC n (désignation) : section de classe 4 — résistances de section et de stabilité non vérifiées… »</td>
+<td>Section de classe 4 (automatique ou forcée)</td>
+<td>Résistances non calculées (« — »)</td>
+<td>Vérification hors de l'outil</td>
+</tr>
+<tr>
+<td>« RC n (désignation) : voilement par cisaillement de l'âme non négligeable… vérification complémentaire requise selon EN 1993-1-5 »</td>
+<td>Voir Dispense « Voil. »</td>
+<td>Aucun, simple signalement</td>
+<td>Vérification complémentaire hors outil</td>
+</tr>
+</tbody>
+</table>
