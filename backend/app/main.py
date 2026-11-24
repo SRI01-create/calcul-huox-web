@@ -75,6 +75,7 @@ from .models import (
 )
 from .parsers import build_all_lc, parse_ele_file, parse_lc_file, split_axial
 from .results import build_response
+from . import tracking
 
 load_dotenv()
 
@@ -436,15 +437,36 @@ async def calculate(
        rc_configs → éléments concernés écartés du calcul (warning, non
        bloquant)
     7. build_response() → Format 1 + Format 2 + métadonnées + warnings
+
+    Suivi d'usage anonyme (tracking.py) : compteurs et codes courts, envoyés
+    après le calcul sans jamais le ralentir ni le faire échouer.
     """
+    run = tracking.CalcRun()
+    try:
+        response = await _calculate(run, request, ele_file, lc_files)
+    except Exception:
+        run.finish(ok=False)
+        raise
+    run.finish(ok=True, response=response)
+    return response
+
+
+async def _calculate(
+    run: "tracking.CalcRun",
+    request: str,
+    ele_file: UploadFile,
+    lc_files: list[UploadFile],
+) -> CalculationResponse:
+    """Corps du calcul (étapes 1 à 7 de `calculate`). `run` sert uniquement au suivi."""
     # ── 1. Validation du JSON request ────────────────────────────────────────
     try:
         calc_request = CalculationRequest.model_validate_json(request)
     except (ValidationError, ValueError) as exc:
-        raise HTTPException(
-            status_code=422,
-            detail=f"Paramètres de calcul invalides : {exc}",
+        raise run.err(
+            "E_REQUETE", 422, f"Paramètres de calcul invalides : {exc}",
         ) from exc
+    run.n_materiaux = len(calc_request.material_configs)
+    run.n_rc = len(calc_request.rc_configs)
 
     # ── 2. Parsing fichier ELE ───────────────────────────────────────────────
     try:
@@ -453,30 +475,28 @@ async def calculate(
     except ValueError as exc:
         msg = str(exc)
         detail = msg if msg.startswith("Fichier ELE") else f"Fichier ELE : {msg}"
-        raise HTTPException(status_code=400, detail=detail) from exc
+        raise run.err("E_ELE", 400, detail) from exc
 
     # ── 3. Parsing fichiers LC ───────────────────────────────────────────────
+    run.n_cdc = len(lc_files)
     if not lc_files:
-        raise HTTPException(status_code=400, detail="Aucun fichier de cas de charge fourni.")
+        raise run.err("E_AUCUN_CDC", 400, "Aucun fichier de cas de charge fourni.")
 
     lc_dfs: dict[str, "object"] = {}
     for f in lc_files:
         lc_name = _lc_name_from_filename(f.filename)
         if lc_name in lc_dfs:
-            raise HTTPException(
-                status_code=400,
-                detail=(
-                    f"Cas de charge '{lc_name}' fourni plusieurs fois "
-                    f"(noms de fichiers en double une fois l'extension retirée)."
-                ),
+            raise run.err(
+                "E_CDC_DOUBLON", 400,
+                f"Cas de charge '{lc_name}' fourni plusieurs fois "
+                f"(noms de fichiers en double une fois l'extension retirée).",
             )
         try:
             raw = (await f.read()).decode("utf-8", errors="replace")
             lc_dfs[lc_name] = parse_lc_file(raw, lc_name)
         except ValueError as exc:
-            raise HTTPException(
-                status_code=400,
-                detail=f"Fichier {f.filename} : {exc}",
+            raise run.err(
+                "E_CDC_FICHIER", 400, f"Fichier {f.filename} : {exc}",
             ) from exc
 
     # ── 4. Consolidation ALL_LC ───────────────────────────────────────────────
@@ -484,7 +504,7 @@ async def calculate(
         all_lc = build_all_lc(lc_dfs)
         all_lc = split_axial(all_lc)
     except ValueError as exc:
-        raise HTTPException(status_code=400, detail=str(exc)) from exc
+        raise run.err("E_CDC_CONSOLIDATION", 400, str(exc)) from exc
 
     # ── 5. Jointure avec le mapping élément → RC ─────────────────────────────
     # Non bloquant : un élément présent dans les CdC mais absent de l'ELE est
@@ -571,12 +591,12 @@ async def calculate(
         return build_response(calc_request.rc_configs, materials, all_lc, extra_warnings=extra_warnings)
     except KeyError as exc:
         # Désignation de section introuvable au catalogue (get_section)
-        raise HTTPException(status_code=400, detail=f"Erreur de catalogue : {exc}") from exc
+        raise run.err("E_CATALOGUE", 400, f"Erreur de catalogue : {exc}") from exc
     except ValueError as exc:
-        raise HTTPException(status_code=400, detail=f"Erreur de calcul : {exc}") from exc
+        raise run.err("E_CALCUL", 400, f"Erreur de calcul : {exc}") from exc
     except Exception as exc:  # pragma: no cover — filet de sécurité
-        raise HTTPException(
-            status_code=500,
-            detail=f"Erreur interne inattendue lors du calcul : {exc}",
+        raise run.err(
+            "E_INTERNE", 500,
+            f"Erreur interne inattendue lors du calcul : {exc}",
         ) from exc
     
