@@ -119,8 +119,13 @@ def build_rc_summary(
     holed   = ptc_eff != "P"
     # Af_trou / Af_net : uniquement H et U hors cornières (semelle tendue)
     has_flange_holes = holed and is_HU and not is_angle
-    lam_vals = [v for v in (pre.get("lambda_bar_y"), pre.get("lambda_bar_z")) if v is not None]
-    lambda_max = max(lam_vals) if lam_vals else None
+    # λ affiché = élancement relatif maximal réellement utilisé par le moteur
+    # (pre["lambda_bar_max"]) : max(λ̄y ; λ̄z) pour H, O, X ; pour U (cornières
+    # comprises) max(λ̄y ; λ̄z ; λ̄T ; λ̄TF). Repli sur max(λ̄y ; λ̄z) si absent.
+    lambda_max = pre.get("lambda_bar_max")
+    if lambda_max is None:
+        lam_vals = [v for v in (pre.get("lambda_bar_y"), pre.get("lambda_bar_z")) if v is not None]
+        lambda_max = max(lam_vals) if lam_vals else None
 
     return RCSummary(
         rc_number     = rc.rc_number,

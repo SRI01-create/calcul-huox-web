@@ -509,7 +509,7 @@ class RCSummary(BaseModel):
     crT: Optional[float] = None
     buckling_curve_y: Optional[str] = None
     buckling_curve_z: Optional[str] = None
-    lambda_max: Optional[float] = None   # λ = max(λ̄y ; λ̄z)
+    lambda_max: Optional[float] = None   # λ = max(λ̄y ; λ̄z) ; pour U : max(λ̄y ; λ̄z ; λ̄T ; λ̄TF)
     # Déversement (H, U)
     Lm:         Optional[float] = None   # m
     zG:         Optional[float] = None   # mm
