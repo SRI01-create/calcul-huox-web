@@ -12,6 +12,8 @@ import ResultsFormat1   from './components/ResultsFormat1'
 import ResultsFormat2   from './components/ResultsFormat2'
 // Onglet « Présentation & guide » : chargé à la demande (n'alourdit pas l'outil de calcul)
 const PresentationPage = lazy(() => import('./components/PresentationPage'))
+// Onglet « Validation et cas test » : idem, chargé à la demande
+const ValidationPage = lazy(() => import('./components/ValidationPage'))
 
 const STEPS = [
   { id: 'config',  label: '1 — Configuration RC & Matériaux' },
@@ -19,6 +21,7 @@ const STEPS = [
   { id: 'results', label: '3 — Résultats'                    },
   // Hors étapes de calcul : non numéroté, à la suite de l'onglet 3
   { id: 'guide',   label: 'Présentation & guide' },
+  { id: 'validation', label: 'Validation et cas test' },
 ]
 
 export default function App() {
@@ -88,6 +91,11 @@ export default function App() {
         {activeStep === 'guide' && (
           <Suspense fallback={<p className="text-sm text-gray-400 text-center py-16">Chargement…</p>}>
             <PresentationPage />
+          </Suspense>
+        )}
+        {activeStep === 'validation' && (
+          <Suspense fallback={<p className="text-sm text-gray-400 text-center py-16">Chargement…</p>}>
+            <ValidationPage />
           </Suspense>
         )}
       </main>
