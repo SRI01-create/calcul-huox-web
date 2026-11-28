@@ -12,6 +12,11 @@
 // La couleur de chaque case vient du Word, case par case (un « < » peut être
 // orange ou rouge) : en modifier une = changer sa classe dans le HTML.
 //
+// Chaque cas test est un bloc <section class="cas"> : titre h2, puis une grille
+// .cas-grid (colonne .cas-desc = description, colonne .cas-res = tableau comparé,
+// côte à côte sur écran assez large, empilées sinon), puis .cas-concl = conclusion.
+// Pour un nouveau cas, recopier ce schéma (mise en page dans validation.css).
+//
 // Les deux boutons (téléchargement, PDF) sont insérés à l'emplacement
 // <div data-slot="validation-actions"> de l'introduction (ValidationActions.jsx).
 

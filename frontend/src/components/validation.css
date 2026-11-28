@@ -50,3 +50,26 @@
   color: #1e293b; text-decoration: none;
 }
 .val-list a:hover { background: #f1f5f9; }
+
+/* ── Un cas test : description à gauche, résultats comparés à droite, conclusion dessous ──
+   Côte à côte seulement si la zone de contenu est assez large (≥ 880 px) ;
+   sinon (écran moyen, tablette, téléphone) : les trois blocs s'empilent. */
+.doc-content section.cas { container-type: inline-size; }
+.doc-content section.cas > .cas-grid > div > h3:first-child { margin-top: 1rem; }
+.doc-content section.cas > .cas-concl { margin-top: 0.5rem; }
+.doc-content section.cas > .cas-grid > .cas-desc > p,
+.doc-content section.cas > .cas-grid > .cas-desc > ul,
+.doc-content section.cas > .cas-grid > .cas-desc > ol,
+.doc-content section.cas > .cas-concl > p { max-width: 48rem; }
+.doc-content section.cas > .cas-concl > p.approved { max-width: none; }
+@container (min-width: 880px) {
+  .doc-content .cas-grid {
+    display: grid; grid-template-columns: minmax(0, 1fr) max-content;
+    column-gap: 2rem; align-items: start;
+  }
+  .doc-content .cas-grid > .cas-res .tbl-wrap { margin-top: 0.5rem; }
+  /* tableau resserré pour laisser de la place à la description et à ses schémas */
+  .doc-content .cas-res table.cmp-table td,
+  .doc-content .cas-res table.cmp-table th { padding: 0.3rem 0.55rem; }
+  .doc-content .cas-res table.cmp-table th { max-width: 8.5rem; }
+}
