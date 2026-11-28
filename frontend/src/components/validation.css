@@ -1,0 +1,52 @@
+/* Onglet « Validation et cas test » — couleurs des tableaux comparés et boutons.
+   Couleurs reprises du Word : fonds CCFFCC / FFFFCC / FFCCCC / D9D9D9 et textes
+   00B050 / E97132 / FF0000. Tout est préfixé .doc-content ou .val-* . */
+
+/* Cases de comparaison (colonne centrale des tableaux « Résultats comparés ») */
+.doc-content td.cmp-eq   { background: #CCFFCC; color: #00B050; font-weight: 700; }
+.doc-content td.cmp-warn { background: #FFFFCC; color: #E97132; font-weight: 700; }
+.doc-content td.cmp-bad  { background: #FFCCCC; color: #FF0000; font-weight: 700; }
+
+/* Gris D9D9D9 : en-têtes, libellés des lignes, tableau des clauses */
+.doc-content th.shade, .doc-content td.shade { background: #D9D9D9; color: #000; }
+.doc-content th { color: #1e293b; }
+.doc-content .ta-c { text-align: center; }
+.doc-content .ta-r { text-align: right; }
+
+/* En-têtes sans fond dans le Word (cellules vides) : fond blanc, pas le gris par défaut */
+.doc-content table.cmp-table th:not(.shade), .doc-content table.scope-table th:not(.shade) { background: #fff; }
+
+/* Tableaux de résultats : compacts, chiffres alignés */
+.doc-content table.cmp-table { min-width: 0; width: auto; max-width: 100%; font-variant-numeric: tabular-nums; }
+.doc-content table.cmp-table td, .doc-content table.cmp-table th { padding: 0.3rem 0.8rem; }
+.doc-content table.cmp-table td:first-child { font-weight: 500; }
+.doc-content table.scope-table { min-width: 0; width: auto; max-width: 100%; }
+
+/* Mention « APPROUVÉ » */
+.doc-content p.approved {
+  color: #00B050; font-weight: 700; margin: 0.4rem 0 0; max-width: none;
+}
+
+/* Boutons de l'introduction */
+.val-actions { display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: flex-start; margin: 1.1rem 0; }
+.val-menu { position: relative; }
+.val-btn {
+  display: inline-flex; align-items: center; gap: 0.5rem; cursor: pointer;
+  padding: 0.55rem 1rem; border-radius: 0.5rem; font-size: 0.875rem; font-weight: 500;
+  color: #1e293b; background: #fff; border: 1px solid #cbd5e1; text-decoration: none;
+}
+.val-btn:hover { background: #f1f5f9; }
+.val-btn-primary { background: #334155; color: #fff; border-color: #334155; }
+.val-btn-primary:hover { background: #1e293b; }
+.val-caret { color: #64748b; margin-left: 0.15rem; }
+.val-list {
+  position: absolute; left: 0; top: calc(100% + 0.35rem); z-index: 30; min-width: 14rem;
+  max-height: 60vh; overflow-y: auto; margin: 0; padding: 0.35rem; list-style: none;
+  background: #fff; border: 1px solid #e2e8f0; border-radius: 0.5rem;
+  box-shadow: 0 10px 25px rgba(15, 23, 42, 0.15);
+}
+.val-list a {
+  display: block; padding: 0.4rem 0.7rem; border-radius: 0.375rem; font-size: 0.875rem;
+  color: #1e293b; text-decoration: none;
+}
+.val-list a:hover { background: #f1f5f9; }
