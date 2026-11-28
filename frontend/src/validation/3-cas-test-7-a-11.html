@@ -1,1 +1,870 @@
+<h2 id="val-cas-7">Cas test n°7</h2>
 
+<h3 id="val-cas-7-description">Description du cas d’étude</h3>
+
+<ul>
+<li><p>Section : HE AA 140, Matériau : acier carbone S460, Longueur : 3 m,</p></li>
+<li><p>Conditions limites et configuration de flambement : Rotulé-Ponctuel,</p></li>
+<li><p>Configuration de déversement : sans maintiens latéraux, avec chargement déstabilisant, ZG = 64 mm.</p></li>
+<li><p>Chargement :</p>
+<ul>
+<li><p>Compression axiale : NcE = 30 000.0 N,</p></li>
+<li><p>Cisaillement vertical, en milieu de travée : VyE = 10 000.0 N,</p></li>
+<li><p>Cisaillement transversal, en milieu de travée : VzE = 10 000.0 N.</p></li>
+</ul></li>
+</ul>
+
+<p class="figs"><img alt="Figure" loading="lazy" src="/validation/image3.png" style="width:544px"/></p>
+
+<p class="figs"><img alt="Figure" loading="lazy" src="/validation/image4.png" style="width:541px"/></p>
+
+<h3 id="val-cas-7-resultats">Résultats comparés</h3>
+
+<table class="cmp-table">
+
+<thead>
+<tr>
+<th></th>
+<th class="shade ta-c">Résultats Calcul HUOX</th>
+<th class="ta-c"></th>
+<th class="shade ta-c">Contre-calculs par A3C du CTICM</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="shade">N</td>
+<td class="ta-r">0.028</td>
+<td class="cmp-eq ta-c"><strong>=</strong></td>
+<td class="ta-r">0.028</td>
+</tr>
+<tr>
+<td class="shade">Vy</td>
+<td class="ta-r">0.011</td>
+<td class="cmp-eq ta-c"><strong>=</strong></td>
+<td class="ta-r">0.011</td>
+</tr>
+<tr>
+<td class="shade">Vz</td>
+<td class="ta-r">0.024</td>
+<td class="cmp-eq ta-c"><strong>=</strong></td>
+<td class="ta-r">0.024</td>
+</tr>
+<tr>
+<td class="shade">T</td>
+<td class="ta-r">0.000</td>
+<td class="ta-c"> </td>
+<td>∅</td>
+</tr>
+<tr>
+<td class="shade">cy</td>
+<td class="ta-r">0.145</td>
+<td class="cmp-eq ta-c"><strong>=</strong></td>
+<td class="ta-r">0.145</td>
+</tr>
+<tr>
+<td class="shade">cz</td>
+<td class="ta-r">0.415</td>
+<td class="cmp-eq ta-c"><strong>=</strong></td>
+<td class="ta-r">0.415</td>
+</tr>
+<tr>
+<td class="shade">VyT</td>
+<td class="ta-r">0.011</td>
+<td class="ta-c"> </td>
+<td>∅</td>
+</tr>
+<tr>
+<td class="shade">VzT</td>
+<td class="ta-r">0.024</td>
+<td class="ta-c"> </td>
+<td>∅</td>
+</tr>
+<tr>
+<td class="shade">NVTM</td>
+<td class="ta-r">0.589</td>
+<td class="cmp-eq ta-c"><strong>=</strong></td>
+<td class="ta-r">0.589</td>
+</tr>
+<tr>
+<td class="shade">NbF</td>
+<td class="ta-r">0.060</td>
+<td class="cmp-eq ta-c"><strong>=</strong></td>
+<td class="ta-r">0.060</td>
+</tr>
+<tr>
+<td class="shade">NbTF</td>
+<td>n-a</td>
+<td class="ta-c"> </td>
+<td>n-a</td>
+</tr>
+<tr>
+<td class="shade">Mb</td>
+<td class="ta-r">0.320</td>
+<td class="cmp-warn ta-c"><strong>&gt;</strong></td>
+<td class="ta-r">0.206</td>
+</tr>
+<tr>
+<td class="shade">MNy</td>
+<td class="ta-r">0.796</td>
+<td class="cmp-warn ta-c"><strong>&gt;</strong></td>
+<td class="ta-r">0.681</td>
+</tr>
+<tr>
+<td class="shade">MNz</td>
+<td class="ta-r">0.809</td>
+<td class="cmp-warn ta-c"><strong>&gt;</strong></td>
+<td class="ta-r">0.692</td>
+</tr>
+<tr>
+<td class="shade">Ncr (kN)</td>
+<td class="ta-r">632.8</td>
+<td class="cmp-warn ta-c"><strong>&lt;</strong></td>
+<td class="ta-r">632.9</td>
+</tr>
+<tr>
+<td class="shade">λ</td>
+<td class="ta-r">1.293</td>
+<td class="cmp-bad ta-c"><strong>&lt;</strong></td>
+<td class="ta-r">1.294</td>
+</tr>
+<tr>
+<td class="shade">Mcr (kN.m)</td>
+<td class="ta-r">23.7</td>
+<td class="cmp-warn ta-c"><strong>&lt;</strong></td>
+<td class="ta-r">51.8</td>
+</tr>
+<tr>
+<td class="shade">λLT</td>
+<td class="ta-r">1.477</td>
+<td class="cmp-warn ta-c"><strong>&gt;</strong></td>
+<td class="ta-r">0.999</td>
+</tr>
+<tr>
+<td class="shade">Voil.</td>
+<td>oui</td>
+<td class="cmp-eq ta-c"><strong>=</strong></td>
+<td>oui</td>
+</tr>
+<tr>
+<td class="shade">Trous</td>
+<td>oui</td>
+<td class="ta-c"> </td>
+<td>∅</td>
+</tr>
+<tr>
+<td class="shade">Flamb.</td>
+<td>non</td>
+<td class="ta-c"> </td>
+<td>∅</td>
+</tr>
+<tr>
+<td class="shade">Dévers.</td>
+<td>non</td>
+<td class="ta-c"> </td>
+<td>∅</td>
+</tr>
+</tbody>
+</table>
+
+<h3 id="val-cas-7-conclusion">Conclusion</h3>
+
+<p>Les élancements λ sont égaux au millième près. L’élancement λ calculé par Calcul HUOX est validé en l’état. Tous les autres résultats sont soit exactement conformes à l’attendu, soit conservatifs.</p>
+
+<p class="approved">APPROUVÉ</p>
+
+<h2 id="val-cas-8">Cas test n°8</h2>
+
+<h3 id="val-cas-8-description">Description du cas d’étude</h3>
+
+<ul>
+<li><p>Section : IPE A 100, Matériau : acier carbone S235, Longueur : 500 mm,</p></li>
+<li><p>Conditions limites : Encastré-Libre, Coefficients de flambement : cry = 2.0 et crz = 1.0,</p></li>
+<li><p>Configuration de déversement : sans maintiens latéraux, avec chargement déstabilisant, ZG = 49 mm.</p></li>
+<li><p>Chargement :</p>
+<ul>
+<li><p>Compression axiale : NcE = 35 000.0 N,</p></li>
+<li><p>Cisaillement vertical, à 150 mm de l’ancrage : VyE = 20 000.0 N,</p></li>
+<li><p>Moment de flexion suivant y-y, en extrémité : MyE = 1 000.0 N.m.</p></li>
+</ul></li>
+</ul>
+
+<p class="figs"><img alt="Figure" loading="lazy" src="/validation/image5.png" style="width:508px"/></p>
+
+<h3 id="val-cas-8-resultats">Résultats comparés</h3>
+
+<table class="cmp-table">
+
+<thead>
+<tr>
+<th></th>
+<th class="shade ta-c">Résultats Calcul HUOX</th>
+<th class="ta-c"></th>
+<th class="shade ta-c">Contre-calculs par A3C du CTICM</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="shade">N</td>
+<td class="ta-r">0.169</td>
+<td class="cmp-bad ta-c"><strong>&lt;</strong></td>
+<td class="ta-r">0.170</td>
+</tr>
+<tr>
+<td class="shade">Vy</td>
+<td class="ta-r">0.000</td>
+<td class="cmp-eq ta-c"><strong>=</strong></td>
+<td class="ta-r">0.000</td>
+</tr>
+<tr>
+<td class="shade">Vz</td>
+<td class="ta-r">0.332</td>
+<td class="cmp-eq ta-c"><strong>=</strong></td>
+<td class="ta-r">0.332</td>
+</tr>
+<tr>
+<td class="shade">T</td>
+<td class="ta-r">0.000</td>
+<td class="ta-c"> </td>
+<td>∅</td>
+</tr>
+<tr>
+<td class="shade">cy</td>
+<td class="ta-r">0.258</td>
+<td class="cmp-eq ta-c"><strong>=</strong></td>
+<td class="ta-r">0.258</td>
+</tr>
+<tr>
+<td class="shade">cz</td>
+<td class="ta-r">0.000</td>
+<td class="cmp-eq ta-c"><strong>=</strong></td>
+<td class="ta-r">0.000</td>
+</tr>
+<tr>
+<td class="shade">VyT</td>
+<td class="ta-r">0.000</td>
+<td class="ta-c"> </td>
+<td>∅</td>
+</tr>
+<tr>
+<td class="shade">VzT</td>
+<td class="ta-r">0.332</td>
+<td class="ta-c"> </td>
+<td>∅</td>
+</tr>
+<tr>
+<td class="shade">NVTM</td>
+<td class="ta-r">0.258</td>
+<td class="cmp-eq ta-c"><strong>=</strong></td>
+<td class="ta-r">0.258</td>
+</tr>
+<tr>
+<td class="shade">NbF</td>
+<td class="ta-r">0.186</td>
+<td class="cmp-eq ta-c"><strong>=</strong></td>
+<td class="ta-r">0.186</td>
+</tr>
+<tr>
+<td class="shade">NbTF</td>
+<td>n-a</td>
+<td class="ta-c"> </td>
+<td>n-a</td>
+</tr>
+<tr>
+<td class="shade">Mb</td>
+<td class="ta-r">0.530</td>
+<td class="cmp-warn ta-c"><strong>&gt;</strong></td>
+<td class="ta-r">0.269</td>
+</tr>
+<tr>
+<td class="shade">MNy</td>
+<td class="ta-r">0.695</td>
+<td class="cmp-warn ta-c"><strong>&gt;</strong></td>
+<td class="ta-r">0.441</td>
+</tr>
+<tr>
+<td class="shade">MNz</td>
+<td class="ta-r">0.463</td>
+<td class="cmp-warn ta-c"><strong>&gt;</strong></td>
+<td class="ta-r">0.328</td>
+</tr>
+<tr>
+<td class="shade">Ncr (kN)</td>
+<td class="ta-r">1087.7</td>
+<td class="cmp-warn ta-c"><strong>&lt;</strong></td>
+<td class="ta-r">1087.9</td>
+</tr>
+<tr>
+<td class="shade">λ</td>
+<td class="ta-r">0.436</td>
+<td class="cmp-eq ta-c"><strong>=</strong></td>
+<td class="ta-r">0.436</td>
+</tr>
+<tr>
+<td class="shade">Mcr (kN.m)</td>
+<td class="ta-r">4.9</td>
+<td class="cmp-warn ta-c"><strong>&lt;</strong></td>
+<td class="ta-r">62.1</td>
+</tr>
+<tr>
+<td class="shade">λLT</td>
+<td class="ta-r">1.256</td>
+<td class="cmp-warn ta-c"><strong>&gt;</strong></td>
+<td class="ta-r">0.353</td>
+</tr>
+<tr>
+<td class="shade">Voil.</td>
+<td>oui</td>
+<td class="cmp-eq ta-c"><strong>=</strong></td>
+<td>oui</td>
+</tr>
+<tr>
+<td class="shade">Trous</td>
+<td>oui</td>
+<td class="ta-c"> </td>
+<td>∅</td>
+</tr>
+<tr>
+<td class="shade">Flamb.</td>
+<td>oui</td>
+<td class="ta-c"> </td>
+<td>∅</td>
+</tr>
+<tr>
+<td class="shade">Dévers.</td>
+<td>non</td>
+<td class="ta-c"> </td>
+<td>∅</td>
+</tr>
+</tbody>
+</table>
+
+<h3 id="val-cas-8-conclusion">Conclusion</h3>
+
+<p>Les résistances à la traction-compression sont égales au millième près. La résistance à la traction-compression calculée par Calcul HUOX est validée en l’état. Tous les autres résultats sont soit exactement conformes à l’attendu, soit conservatifs.</p>
+
+<p class="approved">APPROUVÉ</p>
+
+<h2 id="val-cas-9">Cas test n°9</h2>
+
+<h3 id="val-cas-9-description">Description du cas d’étude</h3>
+
+<ul>
+<li><p>Section : Tube rectangulaire 100x60x3, Matériau : acier carbone S235, Longueur : 3 m,</p></li>
+<li><p>Conditions limites et configuration de flambement : Rotulé-Ponctuel,</p></li>
+<li><p>Chargement :</p>
+<ul>
+<li><p>Compression axiale : NcE = 3 000.0 N,</p></li>
+<li><p>Cisaillement vertical, en milieu de travée : VyE = 1 000.0 N,</p></li>
+<li><p>Cisaillement transversal, en milieu de travée : VzE = 1 000.0 N.</p></li>
+</ul></li>
+</ul>
+
+<p class="figs"><img alt="Figure" loading="lazy" src="/validation/image6.png" style="width:542px"/></p>
+
+<p class="figs"><img alt="Figure" loading="lazy" src="/validation/image7.png" style="width:542px"/></p>
+
+<h3 id="val-cas-9-resultats">Résultats comparés</h3>
+
+<table class="cmp-table">
+
+<thead>
+<tr>
+<th></th>
+<th class="shade ta-c">Résultats Calcul HUOX</th>
+<th class="ta-c"></th>
+<th class="shade ta-c">Contre-calculs par A3C du CTICM</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="shade">N</td>
+<td class="ta-r">0.014</td>
+<td class="cmp-eq ta-c"><strong>=</strong></td>
+<td class="ta-r">0.014</td>
+</tr>
+<tr>
+<td class="shade">Vy</td>
+<td class="ta-r">0.011</td>
+<td class="cmp-eq ta-c"><strong>=</strong></td>
+<td class="ta-r">0.011</td>
+</tr>
+<tr>
+<td class="shade">Vz</td>
+<td class="ta-r">0.007</td>
+<td class="cmp-eq ta-c"><strong>=</strong></td>
+<td class="ta-r">0.007</td>
+</tr>
+<tr>
+<td class="shade">T</td>
+<td class="ta-r">0.000</td>
+<td class="ta-c"> </td>
+<td>∅</td>
+</tr>
+<tr>
+<td class="shade">cy</td>
+<td class="ta-r">0.108</td>
+<td class="cmp-eq ta-c"><strong>=</strong></td>
+<td class="ta-r">0.108</td>
+</tr>
+<tr>
+<td class="shade">cz</td>
+<td class="ta-r">0.154</td>
+<td class="cmp-warn ta-c"><strong>&gt;</strong></td>
+<td class="ta-r">0.153</td>
+</tr>
+<tr>
+<td class="shade">VyT</td>
+<td class="ta-r">0.011</td>
+<td class="ta-c"> </td>
+<td>∅</td>
+</tr>
+<tr>
+<td class="shade">VzT</td>
+<td class="ta-r">0.007</td>
+<td class="ta-c"> </td>
+<td>∅</td>
+</tr>
+<tr>
+<td class="shade">NVTM</td>
+<td class="ta-r">0.154</td>
+<td class="cmp-warn ta-c"><strong>&gt;</strong></td>
+<td class="ta-r">0.153</td>
+</tr>
+<tr>
+<td class="shade">NbF</td>
+<td class="ta-r">0.036</td>
+<td class="cmp-eq ta-c"><strong>=</strong></td>
+<td class="ta-r">0.036</td>
+</tr>
+<tr>
+<td class="shade">NbTF</td>
+<td>n-a</td>
+<td class="ta-c"> </td>
+<td>n-a</td>
+</tr>
+<tr>
+<td class="shade">Mb</td>
+<td>n-a</td>
+<td class="ta-c"> </td>
+<td>n-a</td>
+</tr>
+<tr>
+<td class="shade">MNy</td>
+<td class="ta-r">0.225</td>
+<td class="cmp-warn ta-c"><strong>&gt;</strong></td>
+<td class="ta-r">0.224</td>
+</tr>
+<tr>
+<td class="shade">MNz</td>
+<td class="ta-r">0.261</td>
+<td class="cmp-warn ta-c"><strong>&gt;</strong></td>
+<td class="ta-r">0.259</td>
+</tr>
+<tr>
+<td class="shade">Ncr (kN)</td>
+<td class="ta-r">125.9</td>
+<td class="cmp-eq ta-c"><strong>=</strong></td>
+<td class="ta-r">125.9</td>
+</tr>
+<tr>
+<td class="shade">λ</td>
+<td class="ta-r">1.297</td>
+<td class="cmp-eq ta-c"><strong>=</strong></td>
+<td class="ta-r">1.297</td>
+</tr>
+<tr>
+<td class="shade">Mcr (kN.m)</td>
+<td>n-a</td>
+<td class="ta-c"> </td>
+<td>n-a</td>
+</tr>
+<tr>
+<td class="shade">λLT</td>
+<td>n-a</td>
+<td class="ta-c"> </td>
+<td>n-a</td>
+</tr>
+<tr>
+<td class="shade">Voil.</td>
+<td>n-a</td>
+<td class="ta-c"> </td>
+<td>n-a</td>
+</tr>
+<tr>
+<td class="shade">Trous</td>
+<td>n-a</td>
+<td class="ta-c"> </td>
+<td>n-a</td>
+</tr>
+<tr>
+<td class="shade">Flamb.</td>
+<td>oui</td>
+<td class="ta-c"> </td>
+<td>∅</td>
+</tr>
+<tr>
+<td class="shade">Dévers.</td>
+<td>n-a</td>
+<td class="ta-c"> </td>
+<td>n-a</td>
+</tr>
+</tbody>
+</table>
+
+<h3 id="val-cas-9-conclusion">Conclusion</h3>
+
+<p>Tous les résultats sont soit exactement conformes à l’attendu, soit conservatifs.</p>
+
+<p class="approved">APPROUVÉ</p>
+
+<h2 id="val-cas-10">Cas test n°10</h2>
+
+<h3 id="val-cas-10-description">Description du cas d’étude</h3>
+
+<ul>
+<li><p>Section : IPE A 100 avec 2 trous à travers l’âme et 2 autres à travers une aile, tous de diamètre 13 mm,</p></li>
+<li><p>Matériau : acier carbone S235,</p></li>
+<li><p>Longueur : 600 mm,</p></li>
+<li><p>Configuration de flambement : Encastré-Encastré,</p></li>
+<li><p>Configuration de déversement : sans maintiens latéraux, avec chargement déstabilisant, ZG = 49 mm.</p></li>
+<li><p>Torseur virtuel :</p>
+<ul>
+<li><p>NtE = 60 000.0 N,</p></li>
+<li><p>NcE = 0.0 N,</p></li>
+<li><p>VyE = 40 000.0 N,</p></li>
+<li><p>VzE = 35 000.0 N,</p></li>
+<li><p>TE = 600.0 N.m,</p></li>
+<li><p>MyE = 2 000.0 N.m,</p></li>
+<li><p>MzE = 400.0 N.m.</p></li>
+</ul></li>
+</ul>
+
+<h3 id="val-cas-10-resultats">Résultats comparés</h3>
+
+<table class="cmp-table">
+
+<thead>
+<tr>
+<th></th>
+<th class="shade ta-c">Résultats Calcul HUOX</th>
+<th class="ta-c"></th>
+<th class="shade ta-c">Contre-calculs analytiques</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="shade">N</td>
+<td class="ta-r">0.385</td>
+<td class="cmp-warn ta-c"><strong>&gt;</strong></td>
+<td class="ta-r">0.384</td>
+</tr>
+<tr>
+<td class="shade">Vy</td>
+<td class="ta-r">0.570</td>
+<td class="cmp-eq ta-c"><strong>=</strong></td>
+<td class="ta-r">0.570</td>
+</tr>
+<tr>
+<td class="shade">Vz</td>
+<td class="ta-r">0.581</td>
+<td class="cmp-eq ta-c"><strong>=</strong></td>
+<td class="ta-r">0.581</td>
+</tr>
+<tr>
+<td class="shade">T</td>
+<td class="ta-r">0.276</td>
+<td class="cmp-eq ta-c"><strong>=</strong></td>
+<td class="ta-r">0.276</td>
+</tr>
+<tr>
+<td class="shade">cy</td>
+<td class="ta-r">0.258</td>
+<td class="cmp-eq ta-c"><strong>=</strong></td>
+<td class="ta-r">0.258</td>
+</tr>
+<tr>
+<td class="shade">cz</td>
+<td class="ta-r">0.226</td>
+<td class="cmp-eq ta-c"><strong>=</strong></td>
+<td class="ta-r">0.226</td>
+</tr>
+<tr>
+<td class="shade">VyT</td>
+<td class="ta-r">0.646</td>
+<td class="cmp-eq ta-c"><strong>=</strong></td>
+<td class="ta-r">0.646</td>
+</tr>
+<tr>
+<td class="shade">VzT</td>
+<td class="ta-r">0.659</td>
+<td class="cmp-eq ta-c"><strong>=</strong></td>
+<td class="ta-r">0.659</td>
+</tr>
+<tr>
+<td class="shade">NVTM</td>
+<td class="ta-r">0.370</td>
+<td class="cmp-eq ta-c"><strong>=</strong></td>
+<td class="ta-r">0.370</td>
+</tr>
+<tr>
+<td class="shade">NbF</td>
+<td class="ta-r">0.000</td>
+<td class="cmp-eq ta-c"><strong>=</strong></td>
+<td class="ta-r">0.000</td>
+</tr>
+<tr>
+<td class="shade">NbTF</td>
+<td>n-a</td>
+<td class="ta-c"> </td>
+<td>n-a</td>
+</tr>
+<tr>
+<td class="shade">Mb</td>
+<td class="ta-r">0.380</td>
+<td class="cmp-eq ta-c"><strong>=</strong></td>
+<td class="ta-r">0.380</td>
+</tr>
+<tr>
+<td class="shade">MNy</td>
+<td class="ta-r">0.688</td>
+<td class="ta-c"> </td>
+<td>∅</td>
+</tr>
+<tr>
+<td class="shade">MNz</td>
+<td class="ta-r">0.786</td>
+<td class="ta-c"> </td>
+<td>∅</td>
+</tr>
+<tr>
+<td class="shade">Ncr (kN)</td>
+<td class="ta-r">3021.4</td>
+<td class="cmp-eq ta-c"><strong>=</strong></td>
+<td class="ta-r">3021.4</td>
+</tr>
+<tr>
+<td class="shade">λ</td>
+<td class="ta-r">0.262</td>
+<td class="cmp-eq ta-c"><strong>=</strong></td>
+<td class="ta-r">0.262</td>
+</tr>
+<tr>
+<td class="shade">Mcr (kN.m)</td>
+<td class="ta-r">9.5</td>
+<td class="cmp-eq ta-c"><strong>=</strong></td>
+<td class="ta-r">9.5</td>
+</tr>
+<tr>
+<td class="shade">λLT</td>
+<td class="ta-r">0.903</td>
+<td class="cmp-eq ta-c"><strong>=</strong></td>
+<td class="ta-r">0.903</td>
+</tr>
+<tr>
+<td class="shade">Voil.</td>
+<td>oui</td>
+<td class="cmp-eq ta-c"><strong>=</strong></td>
+<td>oui</td>
+</tr>
+<tr>
+<td class="shade">Trous</td>
+<td>non</td>
+<td class="cmp-eq ta-c"><strong>=</strong></td>
+<td>non</td>
+</tr>
+<tr>
+<td class="shade">Flamb.</td>
+<td>oui</td>
+<td class="cmp-eq ta-c"><strong>=</strong></td>
+<td>oui</td>
+</tr>
+<tr>
+<td class="shade">Dévers.</td>
+<td>non</td>
+<td class="cmp-eq ta-c"><strong>=</strong></td>
+<td>non</td>
+</tr>
+</tbody>
+</table>
+
+<h3 id="val-cas-10-conclusion">Conclusion</h3>
+
+<p>Tous les résultats sont soit exactement conformes à l’attendu, soit conservatifs.</p>
+
+<p class="approved">APPROUVÉ</p>
+
+<h2 id="val-cas-11">Cas test n°11</h2>
+
+<h3 id="val-cas-11-description">Description du cas d’étude</h3>
+
+<ul>
+<li><p>Section : IPE A 100 avec 2 trous à travers l’âme et 2 autres à travers une aile, tous de diamètre 13 mm,</p></li>
+<li><p>Matériau : acier inox 304L,</p></li>
+<li><p>Longueur : 600 mm,</p></li>
+<li><p>Configuration de flambement : Encastré-Encastré,</p></li>
+<li><p>Configuration de déversement : sans maintiens latéraux, avec chargement déstabilisant, ZG = 49 mm.</p></li>
+<li><p>Torseur virtuel :</p>
+<ul>
+<li><p>NtE = 35 000.0 N,</p></li>
+<li><p>NcE = 0.0 N,</p></li>
+<li><p>VyE = 20 000.0 N,</p></li>
+<li><p>VzE = 15 000.0 N,</p></li>
+<li><p>TE = 600.0 N.m,</p></li>
+<li><p>MyE = 2 000.0 N.m,</p></li>
+<li><p>MzE = 400.0 N.m.</p></li>
+</ul></li>
+</ul>
+
+<h3 id="val-cas-11-resultats">Résultats comparés</h3>
+
+<table class="cmp-table">
+
+<thead>
+<tr>
+<th></th>
+<th class="shade ta-c">Résultats Calcul HUOX</th>
+<th class="ta-c"></th>
+<th class="shade ta-c">Contre-calculs analytiques</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="shade">N</td>
+<td class="ta-r">0.331</td>
+<td class="cmp-eq ta-c"><strong>=</strong></td>
+<td class="ta-r">0.331</td>
+</tr>
+<tr>
+<td class="shade">Vy</td>
+<td class="ta-r">0.421</td>
+<td class="cmp-eq ta-c"><strong>=</strong></td>
+<td class="ta-r">0.421</td>
+</tr>
+<tr>
+<td class="shade">Vz</td>
+<td class="ta-r">0.368</td>
+<td class="cmp-eq ta-c"><strong>=</strong></td>
+<td class="ta-r">0.368</td>
+</tr>
+<tr>
+<td class="shade">T</td>
+<td class="ta-r">0.407</td>
+<td class="cmp-eq ta-c"><strong>=</strong></td>
+<td class="ta-r">0.407</td>
+</tr>
+<tr>
+<td class="shade">cy</td>
+<td class="ta-r">0.381</td>
+<td class="cmp-eq ta-c"><strong>=</strong></td>
+<td class="ta-r">0.381</td>
+</tr>
+<tr>
+<td class="shade">cz</td>
+<td class="ta-r">0.334</td>
+<td class="cmp-eq ta-c"><strong>=</strong></td>
+<td class="ta-r">0.334</td>
+</tr>
+<tr>
+<td class="shade">VyT</td>
+<td class="ta-r">0.513</td>
+<td class="cmp-eq ta-c"><strong>=</strong></td>
+<td class="ta-r">0.513</td>
+</tr>
+<tr>
+<td class="shade">VzT</td>
+<td class="ta-r">0.448</td>
+<td class="cmp-eq ta-c"><strong>=</strong></td>
+<td class="ta-r">0.448</td>
+</tr>
+<tr>
+<td class="shade">NVTM</td>
+<td class="ta-r">0.453</td>
+<td class="cmp-eq ta-c"><strong>=</strong></td>
+<td class="ta-r">0.453</td>
+</tr>
+<tr>
+<td class="shade">NbF</td>
+<td class="ta-r">0.000</td>
+<td class="cmp-eq ta-c"><strong>=</strong></td>
+<td class="ta-r">0.000</td>
+</tr>
+<tr>
+<td class="shade">NbTF</td>
+<td>n-a</td>
+<td class="ta-c"> </td>
+<td>n-a</td>
+</tr>
+<tr>
+<td class="shade">Mb</td>
+<td class="ta-r">0.490</td>
+<td class="cmp-warn ta-c"><strong>&gt;</strong></td>
+<td class="ta-r">0.480</td>
+</tr>
+<tr>
+<td class="shade">MNy</td>
+<td class="ta-r">0.858</td>
+<td class="cmp-eq ta-c"><strong>=</strong></td>
+<td class="ta-r">0.858</td>
+</tr>
+<tr>
+<td class="shade">MNz</td>
+<td class="ta-r">0.882</td>
+<td class="cmp-eq ta-c"><strong>=</strong></td>
+<td class="ta-r">0.882</td>
+</tr>
+<tr>
+<td class="shade">Ncr (kN)</td>
+<td class="ta-r">2877.5</td>
+<td class="cmp-eq ta-c"><strong>=</strong></td>
+<td class="ta-r">2877.5</td>
+</tr>
+<tr>
+<td class="shade">λ</td>
+<td class="ta-r">0.231</td>
+<td class="cmp-eq ta-c"><strong>=</strong></td>
+<td class="ta-r">0.231</td>
+</tr>
+<tr>
+<td class="shade">Mcr (kN.m)</td>
+<td class="ta-r">9.1</td>
+<td class="cmp-eq ta-c"><strong>=</strong></td>
+<td class="ta-r">9.1</td>
+</tr>
+<tr>
+<td class="shade">λLT</td>
+<td class="ta-r">0.798</td>
+<td class="cmp-eq ta-c"><strong>=</strong></td>
+<td class="ta-r">0.798</td>
+</tr>
+<tr>
+<td class="shade">Voil.</td>
+<td>oui</td>
+<td class="cmp-eq ta-c"><strong>=</strong></td>
+<td>oui</td>
+</tr>
+<tr>
+<td class="shade">Trous</td>
+<td>non</td>
+<td class="cmp-eq ta-c"><strong>=</strong></td>
+<td>non</td>
+</tr>
+<tr>
+<td class="shade">Flamb.</td>
+<td>oui</td>
+<td class="cmp-eq ta-c"><strong>=</strong></td>
+<td>oui</td>
+</tr>
+<tr>
+<td class="shade">Dévers.</td>
+<td>non</td>
+<td class="cmp-eq ta-c"><strong>=</strong></td>
+<td>non</td>
+</tr>
+</tbody>
+</table>
+
+<h3 id="val-cas-11-conclusion">Conclusion</h3>
+
+<p>Tous les résultats sont soit exactement conformes à l’attendu, soit conservatifs.</p>
+
+<p class="approved">APPROUVÉ</p>
